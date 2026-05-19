@@ -82,17 +82,9 @@ const GridCell = memo(function GridCell({
 });
 
 // ---------- Строка-droppable: одна droppable-зона на весь номер ----------
-function RoomRow({
-  roomId, isOver, setNodeRef, children,
-}: { roomId: string; isOver: boolean; setNodeRef: (el: HTMLDivElement | null) => void; children: React.ReactNode }) {
-  return (
-    <div ref={setNodeRef} data-room-id={roomId} className={cn('relative flex', isOver && 'bg-primary/5')}>
-      {children}
-    </div>
-  );
-}
-
-function RoomRowDroppable(props: {
+// Содержимое строки изолировано от изменений isOver чтобы не пере-рендеривать
+// все ячейки и брони во время перетаскивания (dnd-kit обновляет isOver часто).
+const RoomRowContent = memo(function RoomRowContent(props: {
   roomId: string;
   cellW: number;
   rowH: number;
@@ -103,17 +95,16 @@ function RoomRowDroppable(props: {
   selectedIds: Set<string>;
   bookingH: number;
   bookingTop: number;
-  onCellClick: (iso: string) => void;
+  onCellClick: (roomId: string, iso: string) => void;
   onBookingClick: (b: Booking, e: React.MouseEvent) => void;
 }) {
   const { roomId, cellW, rowH, dates, dateIndex, bookings, zoom, selectedIds, bookingH, bookingTop, onCellClick, onBookingClick } = props;
-  const { setNodeRef, isOver } = useDroppable({ id: `row:${roomId}` });
   const lastIso = dates.length > 0 ? dates[dates.length - 1].iso : '';
   const firstIso = dates.length > 0 ? dates[0].iso : '';
   return (
-    <RoomRow roomId={roomId} isOver={isOver} setNodeRef={setNodeRef}>
+    <>
       {dates.map(({ iso }) => (
-        <GridCell key={iso} dateIso={iso} cellW={cellW} rowH={rowH} onClick={() => onCellClick(iso)} />
+        <GridCell key={iso} dateIso={iso} cellW={cellW} rowH={rowH} onClick={() => onCellClick(roomId, iso)} />
       ))}
       {bookings.map((b) => {
         const exactIdx = dateIndex.get(b.checkIn);
@@ -123,7 +114,6 @@ function RoomRowDroppable(props: {
           startIdx = exactIdx;
           length = daysBetween(b.checkIn, b.checkOut);
         } else {
-          // Бронь выходит за пределы окна — обрезаем
           if (b.checkOut < firstIso || b.checkIn > lastIso) return null;
           const visibleStart = b.checkIn < firstIso ? 0 : (dateIndex.get(b.checkIn) ?? 0);
           const endIdx = b.checkOut > lastIso ? dates.length : (dateIndex.get(b.checkOut) ?? dates.length);
@@ -141,7 +131,30 @@ function RoomRowDroppable(props: {
           />
         );
       })}
-    </RoomRow>
+    </>
+  );
+});
+
+function RoomRowDroppable(props: {
+  roomId: string;
+  cellW: number;
+  rowH: number;
+  dates: { iso: string; d: Date }[];
+  dateIndex: Map<string, number>;
+  bookings: Booking[];
+  zoom: Zoom;
+  selectedIds: Set<string>;
+  bookingH: number;
+  bookingTop: number;
+  onCellClick: (roomId: string, iso: string) => void;
+  onBookingClick: (b: Booking, e: React.MouseEvent) => void;
+}) {
+  const { roomId } = props;
+  const { setNodeRef, isOver } = useDroppable({ id: `row:${roomId}` });
+  return (
+    <div ref={setNodeRef} data-room-id={roomId} className={cn('relative flex', isOver && 'bg-primary/5')}>
+      <RoomRowContent {...props} />
+    </div>
   );
 }
 
@@ -489,6 +502,11 @@ export default function GridPage() {
     setSelected(b);
   }, [lastSelectedId, visibleBookings, selectedIds]);
 
+  // Стабильный коллбэк для клика по пустой ячейке (используется в memo RoomRowContent)
+  const handleCellClick = useCallback((roomId: string, iso: string) => {
+    setCreateCtx({ roomId, date: iso });
+  }, []);
+
   // Действия над выделенными
   const bulkChangeStatus = (st: BookingStatus) => {
     selectedIds.forEach((id) => updateBooking(id, { status: st }));
@@ -708,7 +726,7 @@ export default function GridPage() {
 
           {/* Подсказки + Undo */}
           <div data-no-pan="true" className="px-3 py-1.5 border-b border-border flex items-center justify-between text-[11px] text-text-muted">
-            <span>Перетаскивайте сетку ЛКМ · бронь — Shift+клик для выбора нескольких · Ctrl+Z — отменить перемещение</span>
+            <span>ПКМ — двигать сетку · ЛКМ — выбрать бронь и перетащить · Shift+клик — выбор нескольких · Ctrl+Z — отменить перемещение</span>
             <Button size="sm" variant="ghost" leftIcon={<Undo2 className="h-3.5 w-3.5" />} onClick={undoLastMove}>Отменить</Button>
           </div>
 
@@ -717,14 +735,18 @@ export default function GridPage() {
             <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
               <div className="flex">
                 {/* Левая колонка — номера */}
-                <div className="sticky left-0 z-20 bg-surface border-r border-border">
-                  <div className="border-b border-border flex items-center px-4 font-bold text-xs uppercase text-text-muted" style={{ height: rowH, width: leftColW }}>
+                {/* Левая колонка — номера. sticky left-0 удерживает её при горизонтальном скролле/ПКМ-панорамировании */}
+                <div
+                  className="sticky left-0 z-30 bg-bg border-r border-border"
+                  style={{ position: 'sticky', left: 0, boxShadow: '4px 0 8px -4px rgba(0,0,0,0.18)' }}
+                >
+                  <div className="border-b border-border flex items-center px-4 font-bold text-xs uppercase text-text-muted bg-bg" style={{ height: rowH, width: leftColW }}>
                     Номер
                   </div>
                   {visibleRooms.map((r) => {
                     const prop = properties.find((p) => p.id === r.propertyId);
                     return (
-                      <div key={r.id} className="border-b border-border px-4 flex flex-col justify-center" style={{ width: leftColW, height: rowH }}>
+                      <div key={r.id} className="border-b border-border px-4 flex flex-col justify-center bg-bg" style={{ width: leftColW, height: rowH }}>
                         <p className="text-sm font-bold text-text leading-none">№ {r.number} · {ROOM_CATEGORY_LABEL[r.category]}</p>
                         <p className="text-[10px] text-text-muted truncate mt-0.5">{prop?.name}</p>
                       </div>
@@ -774,7 +796,7 @@ export default function GridPage() {
                       selectedIds={selectedIds}
                       bookingH={bookingH}
                       bookingTop={bookingTop}
-                      onCellClick={(iso) => setCreateCtx({ roomId: r.id, date: iso })}
+                      onCellClick={handleCellClick}
                       onBookingClick={handleBookingClick}
                     />
                   ))}
