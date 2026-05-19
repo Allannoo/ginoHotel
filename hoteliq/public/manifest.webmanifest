@@ -1,0 +1,12 @@
+{
+  "name": "HotelIQ",
+  "short_name": "HotelIQ",
+  "description": "Платформа управления отелями и посуточной недвижимостью",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1E3A5F",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
