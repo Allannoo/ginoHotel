@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import {
   DndContext, useDraggable, useDroppable, type DragEndEvent, PointerSensor, useSensor, useSensors,
 } from '@dnd-kit/core';
-import { ChevronLeft, ChevronRight, Plus, FileText, Upload, BadgeCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, FileText, Upload, BadgeCheck, CalendarDays } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -14,10 +14,11 @@ import { rooms, properties } from '@/mock/data';
 import { useBookings } from '@/store/bookings';
 import type { Booking, BookingStatus, Guest, PassportData } from '@/types';
 import { fmtMoney, fmtDateShort, daysBetween, cn } from '@/utils/format';
-import { fmtDateLong } from '@/utils/i18n';
+import { fmtDateLong, MONTHS_NOM, MONTHS_GENITIVE } from '@/utils/i18n';
 import { ROOM_CATEGORY_LABEL, BOOKING_STATUS_LABEL, CHANNEL_LABEL } from '@/utils/i18n';
 import { useToast } from '@/components/ui/Toast';
 
+// Режимы отображения сетки
 type Zoom = 'day' | 'week' | 'month';
 
 // Цвета статусов
@@ -30,9 +31,22 @@ const STATUS_STYLE: Record<BookingStatus, { bg: string; label: string }> = {
   cancelled: { bg: 'bg-error text-white', label: 'Отмена' },
 };
 
-// Размер ячейки в пикселях в зависимости от зума
-const ZOOM_CELL: Record<Zoom, number> = { day: 80, week: 36, month: 22 };
-const ZOOM_DAYS: Record<Zoom, number> = { day: 14, week: 30, month: 60 };
+// Ширина ячейки по режиму (День = 1 день крупно, Неделя = 7 дней, Месяц = весь месяц)
+const ZOOM_CELL: Record<Zoom, number> = { day: 220, week: 110, month: 42 };
+
+// Обнулить время
+function atMidnight(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+// ISO YYYY-MM-DD локальной даты (без сдвига UTC)
+function toIso(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+// Кол-во дней в месяце с учётом високосных
+function daysInMonth(year: number, monthIdx: number) {
+  return new Date(year, monthIdx + 1, 0).getDate();
+}
 
 // ---------- Ячейка-дроп ----------
 function GridCell({
@@ -96,10 +110,10 @@ function BookingBlock({
 
 // ---------- Главная страница ----------
 export default function GridPage() {
-  const [zoom, setZoom] = useState<Zoom>('day');
-  const [startDate, setStartDate] = useState<Date>(() => {
-    const d = new Date(); d.setDate(d.getDate() - 2); d.setHours(0, 0, 0, 0); return d;
-  });
+  // Режим отображения и фокусная дата — оба определяют видимый диапазон.
+  const [zoom, setZoom] = useState<Zoom>('week');
+  const [focusDate, setFocusDate] = useState<Date>(() => atMidnight(new Date()));
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -118,14 +132,36 @@ export default function GridPage() {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   const cellW = ZOOM_CELL[zoom];
-  const daysCount = ZOOM_DAYS[zoom];
+
+  // Вычисляем видимый диапазон исходя из режима и фокусной даты
+  const { startDate, daysCount, viewLabel } = useMemo(() => {
+    if (zoom === 'day') {
+      // Режим «День» — ровно один день крупно
+      const s = atMidnight(focusDate);
+      return { startDate: s, daysCount: 1, viewLabel: fmtDateLong(s) };
+    }
+    if (zoom === 'week') {
+      // Режим «Неделя» — понедельник-воскресенье, содержащая focusDate
+      const s = atMidnight(focusDate);
+      const dow = s.getDay() === 0 ? 6 : s.getDay() - 1; // 0 = Пн
+      s.setDate(s.getDate() - dow);
+      const end = new Date(s); end.setDate(end.getDate() + 6);
+      return { startDate: s, daysCount: 7, viewLabel: `${s.getDate()}–${end.getDate()} ${MONTHS_GENITIVE[end.getMonth()]} ${end.getFullYear()}` };
+    }
+    // Режим «Месяц» — весь месяц focusDate (реальное кол-во дней, високосные учтены)
+    const y = focusDate.getFullYear();
+    const m = focusDate.getMonth();
+    const s = new Date(y, m, 1);
+    const dim = daysInMonth(y, m);
+    return { startDate: s, daysCount: dim, viewLabel: `${MONTHS_NOM[m]} ${y}` };
+  }, [zoom, focusDate]);
 
   // Список дат в видимом окне
   const dates = useMemo(() => {
     const arr: { iso: string; d: Date }[] = [];
     for (let i = 0; i < daysCount; i++) {
       const d = new Date(startDate); d.setDate(d.getDate() + i);
-      arr.push({ iso: d.toISOString().slice(0, 10), d });
+      arr.push({ iso: toIso(d), d });
     }
     return arr;
   }, [startDate, daysCount]);
@@ -173,14 +209,30 @@ export default function GridPage() {
     updateBooking(bookId, {
       roomId: newRoomId,
       checkIn: newDate,
-      checkOut: newOut.toISOString().slice(0, 10),
+      checkOut: toIso(newOut),
     });
     push({ tone: 'success', title: 'Бронь перемещена', description: `Новая дата: ${fmtDateShort(newDate)}` });
   };
 
-  const shiftStart = (days: number) => {
-    const d = new Date(startDate); d.setDate(d.getDate() + days); setStartDate(d);
+  // Навигация: стрелки сдвигают на 1 день/неделю/месяц в зависимости от режима
+  const shift = (dir: -1 | 1) => {
+    const d = new Date(focusDate);
+    if (zoom === 'day') d.setDate(d.getDate() + dir);
+    else if (zoom === 'week') d.setDate(d.getDate() + dir * 7);
+    else d.setMonth(d.getMonth() + dir);
+    setFocusDate(d);
   };
+  const goToday = () => setFocusDate(atMidnight(new Date()));
+
+  // Следующие три месяца от текущего месяца focusDate — быстрые переходы
+  const nextMonths = useMemo(() => {
+    const out: { label: string; year: number; month: number }[] = [];
+    for (let i = 1; i <= 3; i++) {
+      const d = new Date(focusDate.getFullYear(), focusDate.getMonth() + i, 1);
+      out.push({ label: MONTHS_NOM[d.getMonth()], year: d.getFullYear(), month: d.getMonth() });
+    }
+    return out;
+  }, [focusDate]);
 
   return (
     <PageTransition>
@@ -222,7 +274,7 @@ export default function GridPage() {
           </div>
           <Button size="md" leftIcon={<Plus className="h-4 w-4" />} onClick={() => {
             const r = rooms[0];
-            if (r) setCreateCtx({ roomId: r.id, date: new Date().toISOString().slice(0, 10) });
+            if (r) setCreateCtx({ roomId: r.id, date: toIso(new Date()) });
           }}>Новая бронь</Button>
         </div>
       </div>
@@ -230,35 +282,45 @@ export default function GridPage() {
       {/* Календарь на всю ширину */}
       <Card className="w-full overflow-hidden" padding="none">
           {/* Тулбар */}
-          <div className="flex items-center justify-between p-3 border-b border-border gap-2">
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={() => shiftStart(-7)}><ChevronLeft className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="sm" onClick={() => setStartDate(() => { const d = new Date(); d.setDate(d.getDate() - 2); d.setHours(0,0,0,0); return d; })}>
-                {(() => {
-                  // «Центральная» дата видимого окна — показываем её вместо статичного «Сегодня».
-                  const focus = new Date(startDate);
-                  focus.setDate(focus.getDate() + Math.floor(daysCount / 2));
-                  const today = new Date(); today.setHours(0,0,0,0);
-                  const isToday = focus.toDateString() === today.toDateString();
-                  return isToday ? 'Сегодня' : fmtDateLong(focus);
-                })()}
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => shiftStart(7)}><ChevronRight className="h-4 w-4" /></Button>
-            </div>
+          <div className="flex flex-col gap-3 p-3 border-b border-border">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={() => shift(-1)} title="Назад"><ChevronLeft className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="sm" onClick={goToday}>Сегодня</Button>
+                <Button variant="ghost" size="icon" onClick={() => shift(1)} title="Вперёд"><ChevronRight className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => setPickerOpen(true)} title="Выбрать месяц">
+                  <CalendarDays className="h-4 w-4" />
+                </Button>
+                <span className="ml-2 font-display text-lg text-text capitalize">{viewLabel}</span>
+              </div>
 
-            <div className="flex items-center gap-1 bg-surface-2 rounded-btn p-1">
-              {(['day', 'week', 'month'] as Zoom[]).map((z) => (
-                <button
-                  key={z}
-                  onClick={() => setZoom(z)}
-                  className={cn(
-                    'px-3 h-7 rounded-md text-xs font-semibold transition-colors',
-                    zoom === z ? 'bg-bg text-text shadow-soft' : 'text-text-muted hover:text-text',
-                  )}
-                >
-                  {z === 'day' ? 'День' : z === 'week' ? 'Неделя' : 'Месяц'}
-                </button>
-              ))}
+              {/* Переключатели режимов */}
+              <div className="flex items-center gap-1 bg-surface-2 rounded-btn p-1 flex-wrap">
+                {(['day', 'week', 'month'] as Zoom[]).map((z) => (
+                  <button
+                    key={z}
+                    onClick={() => setZoom(z)}
+                    className={cn(
+                      'px-3 h-7 rounded-md text-xs font-semibold transition-colors',
+                      zoom === z ? 'bg-bg text-text shadow-soft' : 'text-text-muted hover:text-text',
+                    )}
+                  >
+                    {z === 'day' ? 'День' : z === 'week' ? 'Неделя' : 'Месяц'}
+                  </button>
+                ))}
+                <span className="mx-1 h-4 w-px bg-border" />
+                {/* Быстрые переходы на следующие 3 месяца */}
+                {nextMonths.map((m) => (
+                  <button
+                    key={`${m.year}-${m.month}`}
+                    onClick={() => { setZoom('month'); setFocusDate(new Date(m.year, m.month, 1)); }}
+                    className="px-3 h-7 rounded-md text-xs font-semibold text-text-muted hover:text-text hover:bg-bg transition-colors"
+                    title={`${m.label} ${m.year}`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -287,7 +349,7 @@ export default function GridPage() {
                   {/* Шапка с датами */}
                   <div className="flex sticky top-0 z-10 bg-surface border-b border-border">
                     {dates.map(({ iso, d }) => {
-                      const isToday = iso === new Date().toISOString().slice(0, 10);
+                      const isToday = iso === toIso(new Date());
                       const isWeekend = [0, 6].includes(d.getDay());
                       return (
                         <div
@@ -399,7 +461,7 @@ export default function GridPage() {
               loyaltyPoints: 0,
               blacklisted: false,
               notes: '',
-              registeredAt: new Date().toISOString().slice(0, 10),
+              registeredAt: toIso(new Date()),
               passport: payload.guest.passport,
             };
             addGuest(g);
@@ -418,7 +480,7 @@ export default function GridPage() {
             channel: 'direct',
             status: 'confirmed',
             checkIn: payload.checkIn,
-            checkOut: out.toISOString().slice(0, 10),
+            checkOut: toIso(out),
             guests: payload.guests,
             amount: room.basePrice * payload.nights,
           };
@@ -427,7 +489,69 @@ export default function GridPage() {
           push({ tone: 'success', title: 'Бронь создана', description: guestName });
         }}
       />
+
+      {/* Пикер месяца/года */}
+      <MonthPicker
+        open={pickerOpen}
+        value={focusDate}
+        onClose={() => setPickerOpen(false)}
+        onPick={(d) => { setFocusDate(d); setZoom('month'); setPickerOpen(false); }}
+      />
     </PageTransition>
+  );
+}
+
+// ---------- Пикер месяца / года ----------
+function MonthPicker({ open, value, onClose, onPick }: {
+  open: boolean; value: Date; onClose: () => void; onPick: (d: Date) => void;
+}) {
+  const [year, setYear] = useState(value.getFullYear());
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  return (
+    <Modal open={open} onClose={onClose} title="Выбор периода" subtitle="Год и месяц" size="sm">
+      <div className="flex items-center justify-between mb-4">
+        <Button variant="ghost" size="icon" onClick={() => setYear((y) => y - 1)}><ChevronLeft className="h-4 w-4" /></Button>
+        <span className="font-display text-2xl text-text">{year}</span>
+        <Button variant="ghost" size="icon" onClick={() => setYear((y) => y + 1)}><ChevronRight className="h-4 w-4" /></Button>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        {MONTHS_NOM.map((m, idx) => {
+          const isCurrent = year === currentYear && idx === currentMonth;
+          const isSelected = year === value.getFullYear() && idx === value.getMonth();
+          return (
+            <button
+              key={m}
+              onClick={() => onPick(new Date(year, idx, 1))}
+              className={cn(
+                'h-12 rounded-btn text-sm font-semibold transition-all border',
+                isSelected
+                  ? 'bg-primary text-white border-primary'
+                  : isCurrent
+                  ? 'border-primary text-primary bg-primary/5'
+                  : 'border-border text-text-muted hover:text-text hover:bg-surface-2',
+              )}
+            >
+              {m}
+            </button>
+          );
+        })}
+      </div>
+      <div className="grid grid-cols-4 gap-1 mt-4 pt-4 border-t border-border">
+        {[year - 2, year - 1, year, year + 1].map((y) => (
+          <button
+            key={y}
+            onClick={() => setYear(y)}
+            className={cn(
+              'h-8 rounded-md text-xs font-semibold transition-colors',
+              y === year ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text',
+            )}
+          >
+            {y}
+          </button>
+        ))}
+      </div>
+    </Modal>
   );
 }
 

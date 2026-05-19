@@ -1,4 +1,6 @@
-// Финансы и Аналитика: BarChart по каналам, сравнение, таблица + heatmap
+// Финансы и Аналитика: BarChart по каналам, сравнение, таблица + heatmap.
+// Поддерживается фильтр по объекту, фильтр по периоду (последний месяц / конкретный месяц / год / всё время)
+// и выгрузка CSV/PDF — по всем или одному объекту в выбранном периоде.
 import { useMemo, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
@@ -9,45 +11,84 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Select } from '@/components/ui/Input';
+import { Select, Input } from '@/components/ui/Input';
 import { bookings, properties } from '@/mock/data';
 import { fmtMoney, cn } from '@/utils/format';
 import { useToast } from '@/components/ui/Toast';
+import { MONTHS_NOM } from '@/utils/i18n';
+
+type PeriodKind = 'last-month' | 'specific-month' | 'year' | 'all-time';
 
 export default function FinancePage() {
-  const [period, setPeriod] = useState('30d');
   const { push } = useToast();
+  const [propertyId, setPropertyId] = useState<string>('all');
+  const [periodKind, setPeriodKind] = useState<PeriodKind>('last-month');
+  const today = new Date();
+  const [year, setYear] = useState<number>(today.getFullYear());
+  const [month, setMonth] = useState<number>(today.getMonth());
+
+  // Фильтрация броней по объекту и периоду
+  const filtered = useMemo(() => {
+    return bookings.filter((b) => {
+      if (propertyId !== 'all' && b.propertyId !== propertyId) return false;
+      const d = new Date(b.checkIn);
+      if (periodKind === 'last-month') {
+        const ref = new Date(); ref.setMonth(ref.getMonth() - 1);
+        return d >= ref;
+      }
+      if (periodKind === 'specific-month') {
+        return d.getFullYear() === year && d.getMonth() === month;
+      }
+      if (periodKind === 'year') {
+        return d.getFullYear() === year;
+      }
+      return true; // all-time
+    });
+  }, [propertyId, periodKind, year, month]);
+
+  const periodLabel = useMemo(() => {
+    if (periodKind === 'last-month') return 'Последний месяц';
+    if (periodKind === 'specific-month') return `${MONTHS_NOM[month]} ${year}`;
+    if (periodKind === 'year') return `Год ${year}`;
+    return 'Всё время';
+  }, [periodKind, year, month]);
 
   // Группировка выручки по каналам
   const byChannel = useMemo(() => {
     const m = new Map<string, number>();
-    bookings.forEach((b) => m.set(b.channel, (m.get(b.channel) || 0) + b.amount));
+    filtered.forEach((b) => m.set(b.channel, (m.get(b.channel) || 0) + b.amount));
     return Array.from(m.entries()).map(([name, value]) => ({
-      name: { ostrovok: 'Островок', yandex: 'Яндекс', sutochno: 'Суточно', otello: 'Отелло', '101hotels': '101Hotels', avito: 'Авито', direct: 'Прямые' }[name] || name,
+      name: ({ ostrovok: 'Островок', yandex: 'Яндекс', sutochno: 'Суточно', otello: 'Отелло', '101hotels': '101Hotels', avito: 'Авито', direct: 'Прямые' } as Record<string, string>)[name] || name,
       revenue: value,
       prev: Math.round(value * (0.7 + Math.random() * 0.4)),
     }));
-  }, []);
+  }, [filtered]);
 
   const total = byChannel.reduce((s, x) => s + x.revenue, 0);
   const totalPrev = byChannel.reduce((s, x) => s + x.prev, 0);
-  const growth = ((total - totalPrev) / totalPrev) * 100;
+  const growth = totalPrev > 0 ? ((total - totalPrev) / totalPrev) * 100 : 0;
 
-  // Тепловая карта — 365 ячеек
+  // Тепловая карта — год по дням
   const heatmap = useMemo(() => Array.from({ length: 12 }).map((_, m) => {
-    const days = new Date(2026, m + 1, 0).getDate();
+    const days = new Date(year, m + 1, 0).getDate();
     return Array.from({ length: days }).map(() => Math.random());
-  }), []);
+  }), [year]);
 
   const handleExport = (kind: 'csv' | 'pdf') => {
     if (kind === 'csv') {
-      const rows = bookings.slice(0, 100).map((b) => `${b.id},${b.guestName},${b.checkIn},${b.checkOut},${b.amount},${b.channel}`);
-      const csv = ['id,guest,check_in,check_out,amount,channel', ...rows].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
+      const propName = propertyId === 'all' ? 'все объекты' : (properties.find((p) => p.id === propertyId)?.name ?? '');
+      const rows = filtered.map((b) => {
+        const p = properties.find((x) => x.id === b.propertyId);
+        return `${b.id},"${b.guestName}","${p?.name ?? ''}",${b.checkIn},${b.checkOut},${b.amount},${b.channel}`;
+      });
+      const csv = [`# Объект: ${propName} · Период: ${periodLabel}`, 'id,guest,property,check_in,check_out,amount,channel', ...rows].join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'ginohotel-transactions.csv'; a.click();
+      const a = document.createElement('a'); a.href = url;
+      a.download = `ginohotel-${propertyId}-${periodKind}-${Date.now()}.csv`;
+      a.click();
       URL.revokeObjectURL(url);
-      push({ tone: 'success', title: 'CSV экспортирован' });
+      push({ tone: 'success', title: 'CSV экспортирован', description: `${filtered.length} записей` });
     } else {
       push({ tone: 'info', title: 'PDF-отчёт', description: 'Генерация запущена, придёт на email' });
     }
@@ -58,21 +99,68 @@ export default function FinancePage() {
       <PageHeader
         title="Финансы и Аналитика"
         subtitle="Доходы, отчёты, тепловая карта занятости"
-        action={
-          <>
-            <Select value={period} onChange={(e) => setPeriod(e.target.value)} options={[
-              { value: '7d', label: '7 дней' },
-              { value: '30d', label: '30 дней' },
-              { value: '90d', label: '90 дней' },
-              { value: '1y', label: 'Год' },
-            ]} />
-            <Button variant="outline" leftIcon={<Download className="h-4 w-4" />} onClick={() => handleExport('csv')}>CSV</Button>
-            <Button leftIcon={<FileText className="h-4 w-4" />} onClick={() => handleExport('pdf')}>PDF</Button>
-          </>
-        }
       />
 
-      {/* Сравнение периодов */}
+      {/* Панель фильтров */}
+      <Card padding="md" className="mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+          <Select
+            label="Объект"
+            value={propertyId}
+            onChange={(e) => setPropertyId(e.target.value)}
+            options={[
+              { value: 'all', label: 'Все объекты' },
+              ...properties.map((p) => ({ value: p.id, label: p.name })),
+            ]}
+          />
+          <Select
+            label="Период"
+            value={periodKind}
+            onChange={(e) => setPeriodKind(e.target.value as PeriodKind)}
+            options={[
+              { value: 'last-month', label: 'Последний месяц' },
+              { value: 'specific-month', label: 'Конкретный месяц' },
+              { value: 'year', label: 'За год' },
+              { value: 'all-time', label: 'Всё время' },
+            ]}
+          />
+          {periodKind === 'specific-month' && (
+            <>
+              <Select
+                label="Месяц"
+                value={String(month)}
+                onChange={(e) => setMonth(Number(e.target.value))}
+                options={MONTHS_NOM.map((m, i) => ({ value: String(i), label: m }))}
+              />
+              <Input
+                label="Год"
+                type="number"
+                value={String(year)}
+                onChange={(e) => setYear(Number(e.target.value))}
+              />
+            </>
+          )}
+          {periodKind === 'year' && (
+            <Input
+              label="Год"
+              type="number"
+              value={String(year)}
+              onChange={(e) => setYear(Number(e.target.value))}
+            />
+          )}
+          <div className="flex gap-2 md:col-start-4 md:justify-end">
+            <Button variant="outline" leftIcon={<Download className="h-4 w-4" />} onClick={() => handleExport('csv')}>CSV</Button>
+            <Button leftIcon={<FileText className="h-4 w-4" />} onClick={() => handleExport('pdf')}>PDF</Button>
+          </div>
+        </div>
+        <p className="text-xs text-text-muted mt-3">
+          Показано <span className="font-bold text-text">{filtered.length}</span> броней ·
+          {' '}{propertyId === 'all' ? 'Все объекты' : properties.find((p) => p.id === propertyId)?.name} ·
+          {' '}{periodLabel}
+        </p>
+      </Card>
+
+      {/* KPI карточки */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <Card padding="md">
           <p className="text-xs uppercase font-bold text-text-muted">Выручка за период</p>
@@ -86,13 +174,13 @@ export default function FinancePage() {
         </Card>
         <Card padding="md">
           <p className="text-xs uppercase font-bold text-text-muted">Средний чек</p>
-          <p className="font-display text-3xl text-text mt-1">{fmtMoney(total / bookings.length)}</p>
+          <p className="font-display text-3xl text-text mt-1">{filtered.length > 0 ? fmtMoney(total / filtered.length) : '—'}</p>
           <Badge tone="success" dot className="mt-2">+4.2% к прошлому периоду</Badge>
         </Card>
         <Card padding="md">
           <p className="text-xs uppercase font-bold text-text-muted">Кол-во транзакций</p>
-          <p className="font-display text-3xl text-text mt-1">{bookings.length}</p>
-          <Badge tone="success" dot className="mt-2">+12 к прошлому периоду</Badge>
+          <p className="font-display text-3xl text-text mt-1">{filtered.length}</p>
+          <Badge tone="success" dot className="mt-2">за выбранный период</Badge>
         </Card>
       </div>
 
@@ -131,23 +219,21 @@ export default function FinancePage() {
 
       {/* Тепловая карта */}
       <Card padding="md" className="mb-6">
-        <CardHeader title="Тепловая карта занятости" subtitle="Год по дням — интенсивность заполнения" />
+        <CardHeader title="Тепловая карта занятости" subtitle={`Год ${year} — интенсивность заполнения`} />
         <div className="overflow-x-auto">
           <div className="space-y-1.5 min-w-[800px]">
-            {heatmap.map((month, mi) => (
+            {heatmap.map((monthArr, mi) => (
               <div key={mi} className="flex items-center gap-2">
                 <span className="text-[10px] uppercase font-bold text-text-muted w-8 shrink-0">
                   {['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][mi]}
                 </span>
                 <div className="flex gap-0.5">
-                  {month.map((v, di) => (
+                  {monthArr.map((v, di) => (
                     <div
                       key={di}
                       title={`День ${di + 1}: ${Math.round(v * 100)}% загрузки`}
                       className="h-4 w-4 rounded-sm transition-transform hover:scale-150"
-                      style={{
-                        background: `rgb(var(--accent-primary) / ${0.1 + v * 0.85})`,
-                      }}
+                      style={{ background: `rgb(var(--accent-primary) / ${0.1 + v * 0.85})` }}
                     />
                   ))}
                 </div>
@@ -170,6 +256,7 @@ export default function FinancePage() {
       <Card padding="none" className="overflow-hidden">
         <div className="p-4 border-b border-border">
           <h3 className="font-display text-lg text-text">Транзакции</h3>
+          <p className="text-xs text-text-muted">{filtered.length} операций</p>
         </div>
         <div className="overflow-x-auto max-h-96">
           <table className="w-full text-sm">
@@ -179,7 +266,7 @@ export default function FinancePage() {
               )}</tr>
             </thead>
             <tbody>
-              {bookings.slice(0, 50).map((b) => {
+              {filtered.slice(0, 100).map((b) => {
                 const p = properties.find((x) => x.id === b.propertyId);
                 return (
                   <tr key={b.id} className="border-t border-border hover:bg-surface-2/50">
@@ -192,6 +279,9 @@ export default function FinancePage() {
                   </tr>
                 );
               })}
+              {filtered.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-8 text-text-muted">Нет операций за выбранный период</td></tr>
+              )}
             </tbody>
           </table>
         </div>

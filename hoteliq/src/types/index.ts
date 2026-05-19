@@ -159,6 +159,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: UserRole;
   active: boolean;
   password?: string; // мок (в реальной системе — хеш на бэке)
