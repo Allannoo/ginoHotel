@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { type ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/utils/format';
 
 interface Props {
@@ -29,15 +30,15 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
 
   return (
     <AnimatePresence>
-      {open && (
+      {open && createPortal(
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose}
         >
           <motion.div
             className={cn(
-              'relative w-full bg-bg border border-border rounded-modal shadow-lift overflow-hidden',
+              'relative w-full max-h-[92vh] bg-bg border border-border rounded-modal shadow-lift overflow-hidden flex flex-col',
               sizes[size],
             )}
             initial={{ opacity: 0, scale: 0.95, y: 12 }}
@@ -47,24 +48,25 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
             onClick={(e) => e.stopPropagation()}
           >
             {(title || subtitle) && (
-              <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border">
-                <div>
-                  {title && <h2 className="font-display text-xl text-text">{title}</h2>}
+              <div className="flex items-start justify-between gap-4 px-4 sm:px-6 py-4 sm:py-5 border-b border-border shrink-0">
+                <div className="min-w-0">
+                  {title && <h2 className="font-display text-lg sm:text-xl text-text truncate">{title}</h2>}
                   {subtitle && <p className="text-xs text-text-muted mt-1">{subtitle}</p>}
                 </div>
-                <button onClick={onClose} className="text-text-muted hover:text-text rounded-btn p-1.5 hover:bg-surface-2 transition" aria-label="Закрыть">
+                <button onClick={onClose} className="text-text-muted hover:text-text rounded-btn p-1.5 hover:bg-surface-2 transition shrink-0" aria-label="Закрыть">
                   <X className="h-5 w-5" />
                 </button>
               </div>
             )}
-            <div className="px-6 py-5 max-h-[70vh] overflow-y-auto">{children}</div>
+            <div className="px-4 sm:px-6 py-4 sm:py-5 flex-1 overflow-y-auto">{children}</div>
             {footer && (
-              <div className="px-6 py-4 border-t border-border bg-surface flex items-center justify-end gap-3">
+              <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border bg-surface flex items-center justify-end gap-2 sm:gap-3 flex-wrap shrink-0">
                 {footer}
               </div>
             )}
           </motion.div>
-        </motion.div>
+        </motion.div>,
+        document.body,
       )}
     </AnimatePresence>
   );

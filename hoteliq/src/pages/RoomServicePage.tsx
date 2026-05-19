@@ -1,12 +1,12 @@
-// Р В Р Р‹Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚В Р В Р’В°: Р В РІР‚СњР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В РЎвЂќР В Р’В° Р В Р вЂ  Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљ (Room Service)
-// Р В РЎв„ўР В Р’В°Р РЋРІР‚С™Р В Р’В°Р В Р’В»Р В РЎвЂўР В РЎвЂ“ Р В РЎвЂўР РЋР С“Р В Р’ВµР РЋРІР‚С™Р В РЎвЂР В Р вЂ¦Р РЋР С“Р В РЎвЂќР В РЎвЂР РЋРІР‚В¦ Р В РЎвЂ Р В РЎвЂќР В Р’В°Р В Р вЂ Р В РЎвЂќР В Р’В°Р В Р’В·Р РЋР С“Р В РЎвЂќР В РЎвЂР РЋРІР‚В¦ Р В РЎвЂќР В Р’В°Р РЋРІР‚С›Р В Р’Вµ Р В РІР‚в„ўР В Р’В»Р В Р’В°Р В РўвЂР В РЎвЂР В РЎвЂќР В Р’В°Р В Р вЂ Р В РЎвЂќР В Р’В°Р В Р’В·Р В Р’В° + Р В РЎвЂќР В Р’В°Р В Р вЂ¦Р В Р’В±Р В Р’В°Р В Р вЂ¦ Р В Р’В·Р В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В·Р В РЎвЂўР В Р вЂ  + Р В РЎвЂ”Р РЋР вЂљР В Р’ВµР В Р вЂ Р РЋР Р‰Р РЋР вЂ№ Р В РЎвЂ“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР РЏ.
+// Страница: Доставка в номер (Room Service)
+// Каталог осетинских и кавказских кафе Владикавказа + канбан заказов + превью гостя.
 //
-// Р В РЎв„ўР В Р’В°Р В РЎвЂќ Р В РЎвЂ“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР Р‰ Р РЋР РЉР РЋРІР‚С™Р В РЎвЂў Р В Р вЂ Р В РЎвЂР В РўвЂР В РЎвЂР РЋРІР‚С™:
-// 1. Р В РІР‚в„ў Р В РЎвЂќР В Р’В°Р В Р’В¶Р В РўвЂР В РЎвЂўР В РЎВ Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљР В Р’Вµ Р РЋР вЂљР В Р’В°Р РЋР С“Р В РЎвЂ”Р В Р’ВµР РЋРІР‚РЋР В Р’В°Р РЋРІР‚С™Р В Р’В°Р В Р вЂ¦ QR-Р В РЎвЂќР В РЎвЂўР В РўвЂ. Р В Р Р‹Р В РЎвЂќР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋР вЂљР РЋРЎвЂњР В Р’ВµР РЋРІР‚С™ Р Р†Р вЂљРІР‚Сњ Р В РЎвЂўР РЋРІР‚С™Р В РЎвЂќР РЋР вЂљР РЋРІР‚в„–Р В Р вЂ Р В Р’В°Р В Р’ВµР РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р В РЎВР В РЎвЂўР В Р’В±Р В РЎвЂР В Р’В»Р РЋР Р‰Р В Р вЂ¦Р В Р’В°Р РЋР РЏ
-//    Р В Р вЂ Р В Р’ВµР В Р’В±-Р РЋР С“Р РЋРІР‚С™Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚В Р В Р’В° Р РЋР С“Р В РЎвЂў Р РЋР С“Р В РЎвЂ”Р В РЎвЂР РЋР С“Р В РЎвЂќР В РЎвЂўР В РЎВ Р В РЎвЂ”Р В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р вЂ¦Р РЋРІР‚ВР РЋР вЂљР РЋР С“Р В РЎвЂќР В РЎвЂР РЋРІР‚В¦ Р В РЎвЂќР В Р’В°Р РЋРІР‚С›Р В Р’Вµ Р В Р’ВР В РЎС™Р В РІР‚СћР В РЎСљР В РЎСљР В РЎвЂє Р РЋР РЉР РЋРІР‚С™Р В РЎвЂўР В РЎвЂ“Р В РЎвЂў Р В РЎвЂўР РЋРІР‚С™Р В Р’ВµР В Р’В»Р РЋР РЏ.
-// 2. Р В РІР‚СљР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР Р‰ Р В Р вЂ Р РЋРІР‚в„–Р В Р’В±Р В РЎвЂР РЋР вЂљР В Р’В°Р В Р’ВµР РЋРІР‚С™ Р В Р’В±Р В Р’В»Р РЋР вЂ№Р В РўвЂР В Р’В°, Р В РЎвЂўР В РЎвЂ”Р В Р’В»Р В Р’В°Р РЋРІР‚РЋР В РЎвЂР В Р вЂ Р В Р’В°Р В Р’ВµР РЋРІР‚С™ Р РЋРІР‚РЋР В Р’ВµР РЋР вЂљР В Р’ВµР В Р’В· Р В Р Р‹Р В РІР‚ВР В РЎСџ/Р В Р’В®Kassa Р В РЎвЂР В Р’В»Р В РЎвЂ Р РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В РЎвЂР РЋРІР‚С™ Р В Р вЂ¦Р В Р’В° Р РЋР С“Р РЋРІР‚РЋР РЋРІР‚ВР РЋРІР‚С™ Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљР В Р’В°.
-// 3. Р В РІР‚вЂќР В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В· Р РЋРЎвЂњР В Р’В»Р В Р’ВµР РЋРІР‚С™Р В Р’В°Р В Р’ВµР РЋРІР‚С™ Р В Р вЂ  Р В РЎвЂќР В Р’В°Р РЋРІР‚С›Р В Р’Вµ Р РЋРІР‚РЋР В Р’ВµР РЋР вЂљР В Р’ВµР В Р’В· Р В Р вЂ¦Р В Р’В°Р РЋРІвЂљВ¬Р РЋРЎвЂњ Р В РЎвЂР В Р вЂ¦Р РЋРІР‚С™Р В Р’ВµР В РЎвЂ“Р РЋР вЂљР В Р’В°Р РЋРІР‚В Р В РЎвЂР РЋР вЂ№, Р В РўвЂР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В РЎвЂќР В Р’В° 30Р Р†Р вЂљРІР‚Сљ60 Р В РЎВР В РЎвЂР В Р вЂ¦.
-// 4. Р В РЎвЂєР РЋРІР‚С™Р В Р’ВµР В Р’В»Р РЋР Р‰ Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В Р’В°Р В Р’ВµР РЋРІР‚С™ 10% Р В РЎвЂќР В РЎвЂўР В РЎВР В РЎвЂР РЋР С“Р РЋР С“Р В РЎвЂР В РЎвЂ Р РЋР С“ Р В РЎвЂќР В Р’В°Р В Р’В¶Р В РўвЂР В РЎвЂўР В РЎвЂ“Р В РЎвЂў Р В Р’В·Р В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В·Р В Р’В°.
+// Как гость это видит:
+// 1. В каждом номере распечатан QR-код. Сканирует — открывается мобильная
+//    веб-страница со списком партнёрских кафе ИМЕННО этого отеля.
+// 2. Гость выбирает блюда, оплачивает через СБП/ЮKassa или ставит на счёт номера.
+// 3. Заказ улетает в кафе через нашу интеграцию, доставка 30–60 мин.
+// 4. Отель получает 10% комиссии с каждого заказа.
 import { useState, useMemo } from 'react';
 import {
   UtensilsCrossed, QrCode, Star, Clock, Truck, ChefHat,
@@ -24,7 +24,7 @@ import { useRestaurants, MENU_CATEGORY_LABEL } from '@/store/restaurants';
 import { useRoomService, ORDER_STATUS_LABEL } from '@/store/roomservice';
 import { properties } from '@/mock/data';
 import { fmtMoney, cn } from '@/utils/format';
-import type { RoomOrderStatus, Restaurant, RestaurantMenuItem } from '@/types';
+import type { RoomOrderStatus, Restaurant, RestaurantMenuItem, RoomOrder } from '@/types';
 
 const STATUS_TONE: Record<RoomOrderStatus, 'neutral' | 'info' | 'warning' | 'primary' | 'success' | 'error'> = {
   new: 'info', accepted: 'primary', cooking: 'warning', delivering: 'primary',
@@ -65,8 +65,8 @@ export default function RoomServicePage() {
   return (
     <PageTransition>
       <PageHeader
-        title="Р В РІР‚СњР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В РЎвЂќР В Р’В° Р В Р вЂ  Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљ"
-        subtitle="Р В РЎСџР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р вЂ¦Р РЋРІР‚ВР РЋР вЂљР РЋР С“Р В РЎвЂќР В РЎвЂР В Р’Вµ Р В РЎвЂќР В Р’В°Р РЋРІР‚С›Р В Р’Вµ Р В РЎвЂ Р РЋР вЂљР В Р’ВµР РЋР С“Р РЋРІР‚С™Р В РЎвЂўР РЋР вЂљР В Р’В°Р В Р вЂ¦Р РЋРІР‚в„– Р В Р Р‹Р В Р’ВµР В Р вЂ Р В Р’ВµР РЋР вЂљР В Р вЂ¦Р В РЎвЂўР В РІвЂћвЂ“ Р В РЎвЂєР РЋР С“Р В Р’ВµР РЋРІР‚С™Р В РЎвЂР В РЎвЂ. QR-Р В РЎВР В Р’ВµР В Р вЂ¦Р РЋР вЂ№ Р Р†РІР‚В РІР‚в„ў Р В Р’В·Р В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В· Р Р†РІР‚В РІР‚в„ў Р В РўвЂР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В РЎвЂќР В Р’В° Р Р†РІР‚В РІР‚в„ў Р В РЎвЂќР В РЎвЂўР В РЎВР В РЎвЂР РЋР С“Р РЋР С“Р В РЎвЂР РЋР РЏ Р В РЎвЂўР РЋРІР‚С™Р В Р’ВµР В Р’В»Р РЋР вЂ№."
+        title="Доставка в номер"
+        subtitle="Партнёрские кафе и рестораны Северной Осетии. QR-меню → заказ → доставка → комиссия отелю."
         action={
           <>
             <Select
@@ -76,25 +76,25 @@ export default function RoomServicePage() {
               className="!h-10 w-64"
             />
             <Button leftIcon={<QrCode className="h-4 w-4" />} onClick={() => setPreviewOpen(true)}>
-              Р В РЎСџР РЋР вЂљР В Р’ВµР В Р вЂ Р РЋР Р‰Р РЋР вЂ№ Р В РўвЂР В Р’В»Р РЋР РЏ Р В РЎвЂ“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР РЏ
+              Превью для гостя
             </Button>
           </>
         }
       />
 
-      {/* Р В РЎвЂєР В Р’В±Р РЋР вЂ°Р РЋР РЏР РЋР С“Р В Р вЂ¦Р В Р’ВµР В Р вЂ¦Р В РЎвЂР В Р’Вµ Р В РўвЂР В Р’В»Р РЋР РЏ Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋР Р‰Р В Р’В·Р В РЎвЂўР В Р вЂ Р В Р’В°Р РЋРІР‚С™Р В Р’ВµР В Р’В»Р РЋР РЏ */}
+      {/* Объяснение для пользователя */}
       <Card padding="md" className="mb-5 bg-gradient-to-br from-primary/5 to-gold/5 border-primary/20">
         <div className="flex items-start gap-3">
           <span className="h-10 w-10 rounded-btn bg-primary text-white flex items-center justify-center shrink-0">
             <QrCode className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-sm font-bold text-text">Р В РЎв„ўР В Р’В°Р В РЎвЂќ Р В РЎвЂ“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР Р‰ Р В Р вЂ Р В РЎвЂР В РўвЂР В РЎвЂР РЋРІР‚С™ Р В Р вЂ Р В Р’В°Р РЋРІвЂљВ¬Р В РЎвЂ Р В РЎвЂќР В Р’В°Р РЋРІР‚С›Р В Р’Вµ</p>
+            <p className="text-sm font-bold text-text">Как гость видит ваши кафе</p>
             <p className="text-[12px] text-text-muted mt-1 leading-relaxed">
-              Р В РІР‚в„ў Р В РЎвЂќР В Р’В°Р В Р’В¶Р В РўвЂР В РЎвЂўР В РЎВ Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљР В Р’Вµ Р В РЎВР РЋРІР‚в„– Р В РЎвЂ”Р В Р’ВµР РЋРІР‚РЋР В Р’В°Р РЋРІР‚С™Р В Р’В°Р В Р’ВµР В РЎВ QR-Р В РЎвЂќР В РЎвЂўР В РўвЂ. Р В РІР‚СљР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР Р‰ Р РЋР С“Р В РЎвЂќР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋР вЂљР РЋРЎвЂњР В Р’ВµР РЋРІР‚С™ Р Р†Р вЂљРІР‚Сњ Р В РЎвЂўР РЋРІР‚С™Р В РЎвЂќР РЋР вЂљР РЋРІР‚в„–Р В Р вЂ Р В Р’В°Р В Р’ВµР РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р В РЎВР В РЎвЂўР В Р’В±Р В РЎвЂР В Р’В»Р РЋР Р‰Р В Р вЂ¦Р В РЎвЂўР В Р’Вµ Р В РЎВР В Р’ВµР В Р вЂ¦Р РЋР вЂ№
+              В каждом номере мы печатаем QR-код. Гость сканирует — открывается мобильное меню
               <span className="font-mono bg-surface-2 px-1.5 py-0.5 rounded text-[11px] mx-1">gino.menu/{activeHotel}</span>
-              Р РЋР С“Р В РЎвЂў Р РЋР С“Р В РЎвЂ”Р В РЎвЂР РЋР С“Р В РЎвЂќР В РЎвЂўР В РЎВ Р РЋРІР‚С™Р В РЎвЂўР В Р’В»Р РЋР Р‰Р В РЎвЂќР В РЎвЂў Р РЋРІР‚С™Р В Р’ВµР РЋРІР‚В¦ Р В РЎвЂќР В Р’В°Р РЋРІР‚С›Р В Р’Вµ, Р В РЎвЂќР В РЎвЂўР РЋРІР‚С™Р В РЎвЂўР РЋР вЂљР РЋРІР‚в„–Р В Р’Вµ Р В Р вЂ Р РЋРІР‚в„– Р В РЎвЂўР РЋРІР‚С™Р В РЎВР В Р’ВµР РЋРІР‚С™Р В РЎвЂР В Р’В»Р В РЎвЂ Р В Р вЂ¦Р В РЎвЂР В Р’В¶Р В Р’Вµ. Р В РІР‚вЂќР В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В· Р В РЎвЂўР В РЎвЂ”Р В Р’В»Р В Р’В°Р РЋРІР‚РЋР В РЎвЂР В Р вЂ Р В Р’В°Р В Р’ВµР РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р РЋРІР‚РЋР В Р’ВµР РЋР вЂљР В Р’ВµР В Р’В· Р В Р Р‹Р В РІР‚ВР В РЎСџ/Р В Р’В®Kassa
-              Р В Р’В»Р В РЎвЂР В Р’В±Р В РЎвЂў Р РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В РЎвЂР РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р В Р вЂ¦Р В Р’В° Р РЋР С“Р РЋРІР‚РЋР РЋРІР‚ВР РЋРІР‚С™ Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљР В Р’В°. Р В РЎвЂєР РЋРІР‚С™Р В Р’ВµР В Р’В»Р РЋР Р‰ Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р РЋРЎвЂњР РЋРІР‚РЋР В Р’В°Р В Р’ВµР РЋРІР‚С™ <span className="font-bold text-success">10%</span> Р РЋР С“ Р В РЎвЂќР В Р’В°Р В Р’В¶Р В РўвЂР В РЎвЂўР В РЎвЂ“Р В РЎвЂў Р В Р’В·Р В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В·Р В Р’В°.
+              со списком только тех кафе, которые вы отметили ниже. Заказ оплачивается через СБП/ЮKassa
+              либо ставится на счёт номера. Отель получает <span className="font-bold text-success">10%</span> с каждого заказа.
             </p>
           </div>
         </div>
@@ -102,13 +102,13 @@ export default function RoomServicePage() {
 
       {/* KPI */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
-        <KpiCard label="Р В РЎвЂ™Р В РЎвЂќР РЋРІР‚С™Р В РЎвЂР В Р вЂ Р В Р вЂ¦Р РЋРІР‚в„–Р РЋРІР‚В¦ Р В Р’В·Р В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В·Р В РЎвЂўР В Р вЂ " value={stats.active} accent="primary" />
-        <KpiCard label="Р В Р Р‹Р В Р’ВµР В РЎвЂ“Р В РЎвЂўР В РўвЂР В Р вЂ¦Р РЋР РЏ Р В Р’В·Р В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В·Р В РЎвЂўР В Р вЂ " value={stats.todayCount} accent="info" />
-        <KpiCard label="Р В РІР‚в„ўР РЋРІР‚в„–Р РЋР вЂљР РЋРЎвЂњР РЋРІР‚РЋР В РЎвЂќР В Р’В° Р РЋР С“Р В Р’ВµР В РЎвЂ“Р В РЎвЂўР В РўвЂР В Р вЂ¦Р РЋР РЏ" value={fmtMoney(stats.revenue, { compact: true })} accent="success" />
-        <KpiCard label="Р В РЎв„ўР В РЎвЂўР В РЎВР В РЎвЂР РЋР С“Р РЋР С“Р В РЎвЂР РЋР РЏ Р В РЎвЂўР РЋРІР‚С™Р В Р’ВµР В Р’В»Р РЋР вЂ№" value={fmtMoney(stats.commission, { compact: true })} accent="gold" />
+        <KpiCard label="Активных заказов" value={stats.active} accent="primary" />
+        <KpiCard label="Сегодня заказов" value={stats.todayCount} accent="info" />
+        <KpiCard label="Выручка сегодня" value={fmtMoney(stats.revenue, { compact: true })} accent="success" />
+        <KpiCard label="Комиссия отелю" value={fmtMoney(stats.commission, { compact: true })} accent="gold" />
       </div>
 
-      {/* Р В РІР‚в„ўР В РЎвЂќР В Р’В»Р В Р’В°Р В РўвЂР В РЎвЂќР В РЎвЂ */}
+      {/* Вкладки */}
       <div className="bg-surface-2 rounded-btn p-1 inline-flex gap-1 mb-4">
         {(['catalog', 'orders', 'map'] as const).map((v) => (
           <button
@@ -119,7 +119,7 @@ export default function RoomServicePage() {
               view === v ? 'bg-surface text-text shadow-soft' : 'text-text-muted hover:text-text'
             )}
           >
-            {v === 'catalog' ? 'Р В РЎв„ўР В Р’В°Р РЋРІР‚С™Р В Р’В°Р В Р’В»Р В РЎвЂўР В РЎвЂ“ Р В РЎвЂќР В Р’В°Р РЋРІР‚С›Р В Р’Вµ' : v === 'orders' ? `Р В РЎвЂ™Р В РЎвЂќР РЋРІР‚С™Р В РЎвЂР В Р вЂ Р В Р вЂ¦Р РЋРІР‚в„–Р В Р’Вµ Р В Р’В·Р В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В·Р РЋРІР‚в„– (${stats.active})` : 'Р В РЎв„ўР В Р’В°Р РЋР вЂљР РЋРІР‚С™Р В Р’В° Р В РЎвЂќР РЋРЎвЂњР РЋР вЂљР РЋР Р‰Р В Р’ВµР РЋР вЂљР В РЎвЂўР В Р вЂ '}
+            {v === 'catalog' ? 'Каталог кафе' : v === 'orders' ? `Активные заказы (${stats.active})` : 'Карта курьеров'}
           </button>
         ))}
       </div>
@@ -146,8 +146,8 @@ export default function RoomServicePage() {
                     </div>
                     <div className="flex items-center gap-2 text-xs text-text-muted mt-1">
                       <span className="inline-flex items-center gap-1"><Star className="h-3 w-3 text-gold" /> {r.rating}</span>
-                      <span>Р вЂ™Р’В·</span>
-                      <span>{r.reviewsCount} Р В РЎвЂўР РЋРІР‚С™Р В Р’В·.</span>
+                      <span>·</span>
+                      <span>{r.reviewsCount} отз.</span>
                     </div>
                     <div className="flex flex-wrap gap-1 mt-1.5">
                       {r.cuisine.map((c) => <Badge key={c} tone="neutral" className="!text-[10px]">{c}</Badge>)}
@@ -161,7 +161,7 @@ export default function RoomServicePage() {
                 <div className="grid grid-cols-3 gap-2 text-center text-[11px] py-2 border-y border-border">
                   <div>
                     <Clock className="h-3.5 w-3.5 mx-auto text-text-muted" />
-                    <p className="font-bold text-text mt-1">{r.deliveryMinutes} Р В РЎВР В РЎвЂР В Р вЂ¦</p>
+                    <p className="font-bold text-text mt-1">{r.deliveryMinutes} мин</p>
                   </div>
                   <div>
                     <Truck className="h-3.5 w-3.5 mx-auto text-text-muted" />
@@ -169,14 +169,14 @@ export default function RoomServicePage() {
                   </div>
                   <div>
                     <UtensilsCrossed className="h-3.5 w-3.5 mx-auto text-text-muted" />
-                    <p className="font-bold text-text mt-1">{r.menu.length} Р В Р’В±Р В Р’В»Р РЋР вЂ№Р В РўвЂ</p>
+                    <p className="font-bold text-text mt-1">{r.menu.length} блюд</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <div className="text-[11px] text-text-muted flex items-center gap-2">
                     <MapPin className="h-3 w-3" /> {r.address}
                   </div>
-                  <span className="text-[11px] text-primary font-bold">Р В РЎвЂєР РЋРІР‚С™Р В РЎвЂќР РЋР вЂљР РЋРІР‚в„–Р РЋРІР‚С™Р РЋР Р‰ Р В РЎВР В Р’ВµР В Р вЂ¦Р РЋР вЂ№ Р Р†РІР‚В РІР‚в„ў</span>
+                  <span className="text-[11px] text-primary font-bold">Открыть меню →</span>
                 </div>
               </Card>
             );
@@ -190,13 +190,13 @@ export default function RoomServicePage() {
             <Card key={col} padding="md">
               <CardHeader
                 title={ORDER_STATUS_LABEL[col]}
-                subtitle={`${orders.filter((o) => o.status === col).length} Р В Р’В·Р В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В·.`}
+                subtitle={`${orders.filter((o) => o.status === col).length} заказ.`}
               />
               <div className="space-y-2">
                 {orders.filter((o) => o.status === col).map((o) => (
                   <div key={o.id} className="rounded-card border border-border bg-surface-2/40 p-3">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="font-bold text-sm text-text">Р Р†РІР‚С›РІР‚вЂњ {o.roomNumber}</p>
+                      <p className="font-bold text-sm text-text">№ {o.roomNumber}</p>
                       <Badge tone={STATUS_TONE[o.status]}>
                         <span className="inline-flex items-center gap-1">{STATUS_ICON[o.status]} {ORDER_STATUS_LABEL[o.status]}</span>
                       </Badge>
@@ -204,21 +204,21 @@ export default function RoomServicePage() {
                     <p className="text-[11px] text-text-muted">{o.guestName}</p>
                     <p className="text-[11px] text-text-muted">{o.restaurantName}</p>
                     <div className="text-[11px] text-text mt-1.5">
-                      {o.items.slice(0, 2).map((i) => <div key={i.menuItemId}>{i.qty}Р вЂњРІР‚вЂќ {i.name}</div>)}
-                      {o.items.length > 2 && <div className="text-text-muted">Р Р†Р вЂљР’В¦Р В Р’ВµР РЋРІР‚В°Р РЋРІР‚В {o.items.length - 2}</div>}
+                      {o.items.slice(0, 2).map((i) => <div key={i.menuItemId}>{i.qty}× {i.name}</div>)}
+                      {o.items.length > 2 && <div className="text-text-muted">…ещё {o.items.length - 2}</div>}
                     </div>
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
                       <span className="text-sm font-bold text-text">{fmtMoney(o.total)}</span>
                       {NEXT_STATUS[o.status] && (
                         <Button size="sm" variant="outline" onClick={() => setStatus(o.id, NEXT_STATUS[o.status]!)}>
-                          Р Р†РІР‚В РІР‚в„ў {ORDER_STATUS_LABEL[NEXT_STATUS[o.status]!]}
+                          → {ORDER_STATUS_LABEL[NEXT_STATUS[o.status]!]}
                         </Button>
                       )}
                     </div>
                   </div>
                 ))}
                 {orders.filter((o) => o.status === col).length === 0 && (
-                  <div className="text-center text-xs text-text-muted py-4">Р В РЎСџР РЋРЎвЂњР РЋР С“Р РЋРІР‚С™Р В РЎвЂў</div>
+                  <div className="text-center text-xs text-text-muted py-4">Пусто</div>
                 )}
               </div>
             </Card>
@@ -226,13 +226,13 @@ export default function RoomServicePage() {
         </div>
       )}
 
+      {view === 'map' && <CourierMap orders={orders} />}
+
       <GuestPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} hotelId={activeHotel} enabledIds={enabledIds} />
       <RestaurantMenuModal
         restaurantId={menuOpenFor}
         onClose={() => setMenuOpenFor(null)}
       />
-
-      {view === 'map' && <CourierMap orders={orders} />}
     </PageTransition>
   );
 }
@@ -247,14 +247,14 @@ function KpiCard({ label, value, accent }: { label: string; value: string | numb
   );
 }
 
-// ===== Р В РЎСџР РЋР вЂљР В Р’ВµР В Р вЂ Р РЋР Р‰Р РЋР вЂ№ Р В РЎвЂ“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’ВµР В Р вЂ Р В РЎвЂўР В РЎвЂ“Р В РЎвЂў Р В РЎВР В Р’ВµР В Р вЂ¦Р РЋР вЂ№ Р Р†Р вЂљРІР‚Сњ Р РЋРІР‚С™Р В Р’ВµР В Р’В»Р В Р’ВµР РЋРІР‚С›Р В РЎвЂўР В Р вЂ¦-Р В РЎВР В РЎвЂўР В РЎвЂќР В Р’В°Р В РЎвЂ” =====
+// ===== Превью гостевого меню — телефон-мокап =====
 function GuestPreviewModal({ open, onClose, hotelId, enabledIds }: { open: boolean; onClose: () => void; hotelId: string; enabledIds: string[] }) {
   const hotel = properties.find((p) => p.id === hotelId);
   const restaurants = useRestaurants((s) => s.restaurants);
   const cafes = restaurants.filter((r) => enabledIds.includes(r.id));
 
   return (
-    <Modal open={open} onClose={onClose} title="Р В РЎС›Р В Р’В°Р В РЎвЂќ Р РЋР РЉР РЋРІР‚С™Р В РЎвЂў Р В Р вЂ Р В РЎвЂР В РўвЂР В РЎвЂР РЋРІР‚С™ Р В РЎвЂ“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР Р‰" subtitle="Р В РЎС™Р В РЎвЂўР В Р’В±Р В РЎвЂР В Р’В»Р РЋР Р‰Р В Р вЂ¦Р В РЎвЂўР В Р’Вµ Р В РЎВР В Р’ВµР В Р вЂ¦Р РЋР вЂ№ Р В РЎвЂ”Р В РЎвЂў QR-Р В РЎвЂќР В РЎвЂўР В РўвЂР РЋРЎвЂњ Р В Р вЂ  Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљР В Р’Вµ" size="md">
+    <Modal open={open} onClose={onClose} title="Так это видит гость" subtitle="Мобильное меню по QR-коду в номере" size="md">
       <div className="flex flex-col items-center">
         <div className="relative mx-auto" style={{ width: 320 }}>
           {/* phone frame */}
@@ -268,19 +268,19 @@ function GuestPreviewModal({ open, onClose, hotelId, enabledIds }: { open: boole
               <div className="flex items-center justify-between px-4 py-1 text-[10px] text-text-muted">
                 <span>9:41</span>
                 <span className="font-mono">gino.menu/{hotelId}</span>
-                <span>РЎР‚РЎСџРІР‚СљР’В¶</span>
+                <span>📶</span>
               </div>
               {/* content */}
               <div className="px-3 py-3 overflow-y-auto" style={{ height: 540 }}>
                 <div className="text-center mb-3">
                   <p className="text-[10px] uppercase tracking-wider text-text-muted">{hotel?.name}</p>
-                  <h3 className="font-display text-lg text-text">Р В РІР‚вЂќР В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В·Р В Р’В°Р РЋРІР‚С™Р РЋР Р‰ Р В Р вЂ  Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљ</h3>
-                  <p className="text-[11px] text-text-muted">Р В РІР‚СњР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В РЎвЂќР В Р’В° 30Р Р†Р вЂљРІР‚Сљ60 Р В РЎВР В РЎвЂР В Р вЂ¦Р РЋРЎвЂњР РЋРІР‚С™</p>
+                  <h3 className="font-display text-lg text-text">Заказать в номер</h3>
+                  <p className="text-[11px] text-text-muted">Доставка 30–60 минут</p>
                 </div>
                 <div className="space-y-2">
                   {cafes.length === 0 && (
                     <div className="text-center text-xs text-text-muted py-8">
-                      Р В РІР‚в„ўР В РЎвЂќР В Р’В»Р РЋР вЂ№Р РЋРІР‚РЋР В РЎвЂР РЋРІР‚С™Р В Р’Вµ Р В РЎвЂќР В Р’В°Р РЋРІР‚С›Р В Р’Вµ Р В Р вЂ  Р В РЎвЂќР В Р’В°Р РЋРІР‚С™Р В Р’В°Р В Р’В»Р В РЎвЂўР В РЎвЂ“Р В Р’Вµ, Р РЋРІР‚РЋР РЋРІР‚С™Р В РЎвЂўР В Р’В±Р РЋРІР‚в„– Р В РЎвЂўР В Р вЂ¦Р В РЎвЂ Р В РЎвЂ”Р В РЎвЂўР РЋР РЏР В Р вЂ Р В РЎвЂР В Р’В»Р В РЎвЂР РЋР С“Р РЋР Р‰ Р В Р’В·Р В РўвЂР В Р’ВµР РЋР С“Р РЋР Р‰.
+                      Включите кафе в каталоге, чтобы они появились здесь.
                     </div>
                   )}
                   {cafes.map((r) => (
@@ -294,9 +294,9 @@ function GuestPreviewModal({ open, onClose, hotelId, enabledIds }: { open: boole
                           </div>
                           <div className="flex items-center gap-1.5 text-[10px] text-text-muted">
                             <Star className="h-2.5 w-2.5 text-gold" /> {r.rating}
-                            <span>Р вЂ™Р’В·</span>
-                            <Clock className="h-2.5 w-2.5" /> {r.deliveryMinutes} Р В РЎВР В РЎвЂР В Р вЂ¦
-                            <span>Р вЂ™Р’В·</span>
+                            <span>·</span>
+                            <Clock className="h-2.5 w-2.5" /> {r.deliveryMinutes} мин
+                            <span>·</span>
                             <span>{fmtMoney(r.deliveryFee)}</span>
                           </div>
                           <div className="flex flex-wrap gap-1 mt-1">
@@ -308,7 +308,7 @@ function GuestPreviewModal({ open, onClose, hotelId, enabledIds }: { open: boole
                   ))}
                 </div>
                 <div className="mt-3 p-2.5 rounded-card bg-gold/10 border border-gold/20 text-center">
-                  <p className="text-[10px] text-gold font-bold">Р Р†Р’В­РЎвЂ™ Р В РЎС™Р В Р’ВµР РЋР С“Р РЋРІР‚С™Р В Р вЂ¦Р В Р’В°Р РЋР РЏ Р В РЎвЂќР РЋРЎвЂњР РЋРІР‚В¦Р В Р вЂ¦Р РЋР РЏ Р Р†Р вЂљРІР‚Сњ Р В РЎвЂ”Р В РЎвЂР РЋР вЂљР В РЎвЂўР В РЎвЂ“Р В РЎвЂ Р В РЎвЂўР РЋР С“Р В Р’ВµР РЋРІР‚С™Р В РЎвЂР В Р вЂ¦Р РЋР С“Р В РЎвЂќР В РЎвЂР В Р’Вµ</p>
+                  <p className="text-[10px] text-gold font-bold">⭐ Местная кухня — пироги осетинские</p>
                 </div>
               </div>
               <div className="h-1 bg-[#0d1119] flex items-center justify-center">
@@ -320,7 +320,7 @@ function GuestPreviewModal({ open, onClose, hotelId, enabledIds }: { open: boole
         <div className="mt-4 max-w-md text-center">
           <p className="inline-flex items-center gap-1.5 text-xs text-text-muted">
             <Smartphone className="h-3.5 w-3.5" />
-            QR-Р В РЎвЂќР В РЎвЂўР В РўвЂ Р В РўвЂР В Р’В»Р РЋР РЏ Р В РЎвЂ”Р В Р’ВµР РЋРІР‚РЋР В Р’В°Р РЋРІР‚С™Р В РЎвЂ Р В Р вЂ  Р В Р вЂ¦Р В РЎвЂўР В РЎВР В Р’ВµР РЋР вЂљР В Р’В°Р РЋРІР‚В¦:
+            QR-код для печати в номерах:
             <code className="font-mono bg-surface-2 px-2 py-0.5 rounded">gino.menu/{hotelId}</code>
           </p>
         </div>
@@ -330,7 +330,7 @@ function GuestPreviewModal({ open, onClose, hotelId, enabledIds }: { open: boole
 }
 
 // ============================================================
-// Р В РЎС™Р В РЎвЂўР В РўвЂР В Р’В°Р В Р’В»Р В РЎвЂќР В Р’В° Р В РЎВР В Р’ВµР В Р вЂ¦Р РЋР вЂ№ Р В РЎвЂќР В Р’В°Р РЋРІР‚С›Р В Р’Вµ Р Р†Р вЂљРІР‚Сњ Р В РўвЂР В РЎвЂўР В Р’В±Р В Р’В°Р В Р вЂ Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В РЎвЂР В Р’Вµ / Р РЋР вЂљР В Р’ВµР В РўвЂР В Р’В°Р В РЎвЂќР РЋРІР‚С™Р В РЎвЂР РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’В°Р В Р вЂ¦Р В РЎвЂР В Р’Вµ / Р РЋРЎвЂњР В РўвЂР В Р’В°Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В РЎвЂР В Р’Вµ Р В Р’В±Р В Р’В»Р РЋР вЂ№Р В РўвЂ
+// Модалка меню кафе — добавление / редактирование / удаление блюд
 // ============================================================
 const CATEGORY_ORDER: RestaurantMenuItem['category'][] = ['pie', 'starter', 'soup', 'main', 'dessert', 'drink'];
 
@@ -343,12 +343,12 @@ function RestaurantMenuModal({ restaurantId, onClose }: { restaurantId: string |
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<RestaurantMenuItem>({
-    id: '', name: '', description: '', price: 0, category: 'main', emoji: 'РЎР‚РЎСџР РЉР вЂ¦Р С—РЎвЂР РЏ',
+    id: '', name: '', description: '', price: 0, category: 'main', emoji: '🍽️',
   });
 
   const startAdd = () => {
     setEditingId('__new__');
-    setDraft({ id: `m-${Date.now()}`, name: '', description: '', price: 0, category: 'main', emoji: 'РЎР‚РЎСџР РЉР вЂ¦Р С—РЎвЂР РЏ' });
+    setDraft({ id: `m-${Date.now()}`, name: '', description: '', price: 0, category: 'main', emoji: '🍽️' });
   };
   const startEdit = (m: RestaurantMenuItem) => {
     setEditingId(m.id);
@@ -373,44 +373,44 @@ function RestaurantMenuModal({ restaurantId, onClose }: { restaurantId: string |
     <Modal
       open={!!restaurantId}
       onClose={handleClose}
-      title={`${restaurant.cover} ${restaurant.name} Р Р†Р вЂљРІР‚Сњ Р В РЎВР В Р’ВµР В Р вЂ¦Р РЋР вЂ№`}
-      subtitle={`${restaurant.menu.length} Р В Р’В±Р В Р’В»Р РЋР вЂ№Р В РўвЂ Р вЂ™Р’В· Р В РЎВР В РЎвЂР В Р вЂ¦. Р В Р’В·Р В Р’В°Р В РЎвЂќР В Р’В°Р В Р’В· ${fmtMoney(restaurant.minOrder)} Р вЂ™Р’В· Р В РўвЂР В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ Р В РЎвЂќР В Р’В° ${fmtMoney(restaurant.deliveryFee)}`}
+      title={`${restaurant.cover} ${restaurant.name} — меню`}
+      subtitle={`${restaurant.menu.length} блюд · мин. заказ ${fmtMoney(restaurant.minOrder)} · доставка ${fmtMoney(restaurant.deliveryFee)}`}
       size="lg"
     >
       <div className="space-y-4">
-        {/* Р В Р РѓР В Р’В°Р В РЎвЂ”Р В РЎвЂќР В Р’В° Р РЋР С“ Р В РЎвЂќР В Р вЂ¦Р В РЎвЂўР В РЎвЂ”Р В РЎвЂќР В РЎвЂўР В РІвЂћвЂ“ Р В РўвЂР В РЎвЂўР В Р’В±Р В Р’В°Р В Р вЂ Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В РЎвЂР РЋР РЏ */}
+        {/* Шапка с кнопкой добавления */}
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
           <p className="text-xs text-text-muted">
-            Р В Р’ВР В Р’В·Р В РЎВР В Р’ВµР В Р вЂ¦Р В Р’ВµР В Р вЂ¦Р В РЎвЂР РЋР РЏ Р РЋР С“Р В РЎвЂўР РЋРІР‚В¦Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р РЋР РЏР РЋР вЂ№Р РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р В Р’В»Р В РЎвЂўР В РЎвЂќР В Р’В°Р В Р’В»Р РЋР Р‰Р В Р вЂ¦Р В РЎвЂў Р В РЎвЂ Р В РЎвЂ”Р РЋР вЂљР В РЎвЂР В РЎВР В Р’ВµР В Р вЂ¦Р РЋР РЏР РЋР вЂ№Р РЋРІР‚С™Р РЋР С“Р РЋР РЏ Р В РЎвЂ Р В Р вЂ  Р В Р’В°Р В РўвЂР В РЎВР В РЎвЂР В Р вЂ¦Р В РЎвЂќР В Р’Вµ, Р В РЎвЂ Р В Р вЂ  Р В РЎвЂ”Р РЋР вЂљР В Р’ВµР В Р вЂ Р РЋР Р‰Р РЋР вЂ№ Р В РЎвЂ“Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р РЋР РЏ.
+            Изменения сохраняются локально и применяются и в админке, и в превью гостя.
           </p>
           <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={startAdd} disabled={!!editingId}>
-            Р В РІР‚СњР В РЎвЂўР В Р’В±Р В Р’В°Р В Р вЂ Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В Р’В±Р В Р’В»Р РЋР вЂ№Р В РўвЂР В РЎвЂў
+            Добавить блюдо
           </Button>
         </div>
 
-        {/* Р В Р’В¤Р В РЎвЂўР РЋР вЂљР В РЎВР В Р’В° Р РЋР вЂљР В Р’ВµР В РўвЂР В Р’В°Р В РЎвЂќР РЋРІР‚С™Р В РЎвЂР РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋР РЏ / Р В РўвЂР В РЎвЂўР В Р’В±Р В Р’В°Р В Р вЂ Р В Р’В»Р В Р’ВµР В Р вЂ¦Р В РЎвЂР РЋР РЏ */}
+        {/* Форма редактирования / добавления */}
         {editingId && (
           <div className="rounded-card border-2 border-primary/40 bg-primary/5 p-4 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="md:col-span-2">
-                <label className="text-[11px] font-bold text-text-muted">Р В РЎСљР В Р’В°Р В Р’В·Р В Р вЂ Р В Р’В°Р В Р вЂ¦Р В РЎвЂР В Р’Вµ</label>
-                <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Р В РЎСљР В Р’В°Р В РЎвЂ”Р РЋР вЂљР В РЎвЂР В РЎВР В Р’ВµР РЋР вЂљ: Р В РЎвЂєР РЋР С“Р В Р’ВµР РЋРІР‚С™Р В РЎвЂР В Р вЂ¦Р РЋР С“Р В РЎвЂќР В РЎвЂР В РІвЂћвЂ“ Р В РЎвЂ”Р В РЎвЂР РЋР вЂљР В РЎвЂўР В РЎвЂ“ Р РЋР С“ Р РЋР С“Р РЋРІР‚в„–Р РЋР вЂљР В РЎвЂўР В РЎВ" />
+                <label className="text-[11px] font-bold text-text-muted">Название</label>
+                <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Например: Осетинский пирог с сыром" />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-text-muted">Р В Р’В­Р В РЎВР В РЎвЂўР В РўвЂР В Р’В·Р В РЎвЂ</label>
+                <label className="text-[11px] font-bold text-text-muted">Эмодзи</label>
                 <Input value={draft.emoji ?? ''} onChange={(e) => setDraft({ ...draft, emoji: e.target.value })} maxLength={4} />
               </div>
               <div className="md:col-span-3">
-                <label className="text-[11px] font-bold text-text-muted">Р В РЎвЂєР В РЎвЂ”Р В РЎвЂР РЋР С“Р В Р’В°Р В Р вЂ¦Р В РЎвЂР В Р’Вµ</label>
+                <label className="text-[11px] font-bold text-text-muted">Описание</label>
                 <Textarea
                   value={draft.description ?? ''}
                   onChange={(e) => setDraft({ ...draft, description: e.target.value })}
                   rows={2}
-                  placeholder="Р В Р Р‹Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В Р’В°Р В Р вЂ , Р В РЎвЂўР РЋР С“Р В РЎвЂўР В Р’В±Р В Р’ВµР В Р вЂ¦Р В Р вЂ¦Р В РЎвЂўР РЋР С“Р РЋРІР‚С™Р В РЎвЂ, Р В РЎвЂ“Р РЋР вЂљР В Р’В°Р В РЎВР В РЎВР В РЎвЂўР В Р вЂ Р В РЎвЂќР В Р’В°Р Р†Р вЂљР’В¦"
+                  placeholder="Состав, особенности, граммовка…"
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-text-muted">Р В РЎв„ўР В Р’В°Р РЋРІР‚С™Р В Р’ВµР В РЎвЂ“Р В РЎвЂўР РЋР вЂљР В РЎвЂР РЋР РЏ</label>
+                <label className="text-[11px] font-bold text-text-muted">Категория</label>
                 <Select
                   value={draft.category}
                   onChange={(e) => setDraft({ ...draft, category: e.target.value as RestaurantMenuItem['category'] })}
@@ -418,7 +418,7 @@ function RestaurantMenuModal({ restaurantId, onClose }: { restaurantId: string |
                 />
               </div>
               <div>
-                <label className="text-[11px] font-bold text-text-muted">Р В Р’В¦Р В Р’ВµР В Р вЂ¦Р В Р’В°, Р Р†РІР‚С™Р вЂ¦</label>
+                <label className="text-[11px] font-bold text-text-muted">Цена, ₽</label>
                 <Input
                   type="number"
                   min={0}
@@ -428,24 +428,24 @@ function RestaurantMenuModal({ restaurantId, onClose }: { restaurantId: string |
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-border">
-              <Button variant="ghost" size="sm" onClick={cancel}>Р В РЎвЂєР РЋРІР‚С™Р В РЎВР В Р’ВµР В Р вЂ¦Р В Р’В°</Button>
+              <Button variant="ghost" size="sm" onClick={cancel}>Отмена</Button>
               <Button size="sm" onClick={save} disabled={!draft.name.trim() || draft.price <= 0}>
-                {editingId === '__new__' ? 'Р В РІР‚СњР В РЎвЂўР В Р’В±Р В Р’В°Р В Р вЂ Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰' : 'Р В Р Р‹Р В РЎвЂўР РЋРІР‚В¦Р РЋР вЂљР В Р’В°Р В Р вЂ¦Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰'}
+                {editingId === '__new__' ? 'Добавить' : 'Сохранить'}
               </Button>
             </div>
           </div>
         )}
 
-        {/* Р В Р Р‹Р В РЎвЂ”Р В РЎвЂР РЋР С“Р В РЎвЂўР В РЎвЂќ Р В РЎвЂ”Р В РЎвЂў Р В РЎвЂќР В Р’В°Р РЋРІР‚С™Р В Р’ВµР В РЎвЂ“Р В РЎвЂўР РЋР вЂљР В РЎвЂР РЋР РЏР В РЎВ */}
+        {/* Список по категориям */}
         {grouped.length === 0 && (
           <div className="text-center py-10 text-sm text-text-muted">
-            Р В РЎС™Р В Р’ВµР В Р вЂ¦Р РЋР вЂ№ Р В РЎвЂ”Р РЋРЎвЂњР РЋР С“Р РЋРІР‚С™Р В РЎвЂў. Р В РЎСљР В Р’В°Р В Р’В¶Р В РЎВР В РЎвЂР РЋРІР‚С™Р В Р’Вµ Р вЂ™Р’В«Р В РІР‚СњР В РЎвЂўР В Р’В±Р В Р’В°Р В Р вЂ Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰ Р В Р’В±Р В Р’В»Р РЋР вЂ№Р В РўвЂР В РЎвЂўР вЂ™Р’В», Р РЋРІР‚РЋР РЋРІР‚С™Р В РЎвЂўР В Р’В±Р РЋРІР‚в„– Р В Р’В·Р В Р’В°Р В РЎвЂ”Р В РЎвЂўР В Р’В»Р В Р вЂ¦Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰.
+            Меню пусто. Нажмите «Добавить блюдо», чтобы заполнить.
           </div>
         )}
         {grouped.map((g) => (
           <div key={g.cat}>
             <h4 className="text-[11px] uppercase font-bold text-text-muted mb-2 pb-1 border-b border-border">
-              {MENU_CATEGORY_LABEL[g.cat]} Р вЂ™Р’В· {g.items.length}
+              {MENU_CATEGORY_LABEL[g.cat]} · {g.items.length}
             </h4>
             <div className="space-y-1.5">
               {g.items.map((m) => (
@@ -462,7 +462,7 @@ function RestaurantMenuModal({ restaurantId, onClose }: { restaurantId: string |
                     <button
                       onClick={() => startEdit(m)}
                       className="h-7 w-7 rounded-btn hover:bg-surface flex items-center justify-center"
-                      title="Р В Р’В Р В Р’ВµР В РўвЂР В Р’В°Р В РЎвЂќР РЋРІР‚С™Р В РЎвЂР РЋР вЂљР В РЎвЂўР В Р вЂ Р В Р’В°Р РЋРІР‚С™Р РЋР Р‰"
+                      title="Редактировать"
                       disabled={!!editingId}
                     >
                       <Pencil className="h-3.5 w-3.5 text-text-muted" />
@@ -470,7 +470,7 @@ function RestaurantMenuModal({ restaurantId, onClose }: { restaurantId: string |
                     <button
                       onClick={() => removeMenuItem(restaurant.id, m.id)}
                       className="h-7 w-7 rounded-btn hover:bg-error/10 flex items-center justify-center"
-                      title="Р В Р в‚¬Р В РўвЂР В Р’В°Р В Р’В»Р В РЎвЂР РЋРІР‚С™Р РЋР Р‰"
+                      title="Удалить"
                       disabled={!!editingId}
                     >
                       <Trash2 className="h-3.5 w-3.5 text-error" />
@@ -486,144 +486,154 @@ function RestaurantMenuModal({ restaurantId, onClose }: { restaurantId: string |
   );
 }
 
-// =====================================================================
-// Карта курьеров Владикавказа (мок-данные, упрощённая SVG-карта).
-// Показывает положение курьеров и привязанные к ним заказы (номер в отеле).
-// =====================================================================
-type Courier = {
+// ============================================================
+// Карта курьеров Владикавказа (SVG-мок: Терек, парки, улицы, отели, маршруты)
+// ============================================================
+type CourierStatus = 'delivering' | 'pickup' | 'idle';
+interface MockCourier {
   id: string;
   name: string;
   phone: string;
-  x: number; y: number;
-  status: 'idle' | 'pickup' | 'delivering';
+  status: CourierStatus;
+  x: number;
+  y: number;
   orderIds: string[];
-};
-
-const MOCK_COURIERS: Courier[] = [
-  { id: 'c1', name: 'Тимур Кочиев',   phone: '+7 (918) 700-12-34', x: 220, y: 180, status: 'delivering', orderIds: [] },
-  { id: 'c2', name: 'Зураб Дзодзиев', phone: '+7 (918) 712-55-90', x: 360, y: 240, status: 'pickup',     orderIds: [] },
-  { id: 'c3', name: 'Алан Бекоев',    phone: '+7 (918) 743-08-77', x: 450, y: 130, status: 'idle',       orderIds: [] },
+}
+const MOCK_COURIERS: MockCourier[] = [
+  { id: 'c1', name: 'Тимур Кочиев', phone: '+7 928 100-11-22', status: 'delivering', x: 220, y: 180, orderIds: [] },
+  { id: 'c2', name: 'Зураб Дзодзиев', phone: '+7 928 200-33-44', status: 'pickup', x: 380, y: 250, orderIds: [] },
+  { id: 'c3', name: 'Алан Бекоев', phone: '+7 928 300-55-66', status: 'idle', x: 470, y: 140, orderIds: [] },
 ];
-
-const HOTEL_POINTS: Record<string, { x: number; y: number; label: string }> = {
-  'prop_1': { x: 280, y: 200, label: 'Александровский' },
-  'prop_2': { x: 340, y: 170, label: 'Иристон' },
-  'prop_3': { x: 420, y: 260, label: 'Гранд-отель' },
+const HOTEL_POINTS: Record<string, { x: number; y: number; name: string }> = {
+  prop_1: { x: 180, y: 130, name: 'Александровский' },
+  prop_2: { x: 320, y: 200, name: 'Иристон' },
+  prop_3: { x: 460, y: 280, name: 'Гранд-отель' },
+};
+const STATUS_BADGE_TONE: Record<CourierStatus, 'success' | 'info' | 'neutral'> = {
+  delivering: 'success', pickup: 'info', idle: 'neutral',
+};
+const STATUS_LABEL_RU: Record<CourierStatus, string> = {
+  delivering: 'Доставляет', pickup: 'Забирает заказ', idle: 'Свободен',
 };
 
-function CourierMap({ orders }: {
-  orders: Array<{ id: string; roomNumber: string; guestName: string; status: string; propertyId?: string }>;
-}) {
+function CourierMap({ orders }: { orders: RoomOrder[] }) {
+  // Распределяем активные заказы между «занятыми» курьерами
   const active = orders.filter((o) => ['accepted', 'cooking', 'delivering'].includes(o.status));
-  const couriers: Courier[] = MOCK_COURIERS.map((c, idx) => ({
+  const couriers = MOCK_COURIERS.map((c, idx) => ({
     ...c,
-    orderIds: active.filter((_, i) => i % MOCK_COURIERS.length === idx).map((o) => o.id),
+    orderIds: c.status === 'idle' ? [] : active.filter((_, i) => i % 2 === idx % 2).slice(0, 2).map((o) => o.id),
   }));
 
   return (
-    <Card padding="md" className="mt-4">
-      <CardHeader
-        title={<span className="flex items-center gap-2"><Navigation className="h-5 w-5 text-primary" /> Карта курьеров — Владикавказ</span>}
-        subtitle="Мок-данные. В проде — Яндекс.Карты JS API с реальным геопоиском"
-        action={<Badge tone="primary" dot>{couriers.length} курьера на смене</Badge>}
-      />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 rounded-card border border-border overflow-hidden bg-[#eef3f8] dark:bg-[#0e1623]">
-          <svg viewBox="0 0 600 400" className="w-full h-auto" style={{ minHeight: 360 }}>
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
+      <Card padding="md" className="overflow-hidden">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 className="text-sm font-bold flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" />Владикавказ — карта курьеров</h3>
+          <Badge tone="neutral">Мок-данные</Badge>
+        </div>
+        <div className="w-full aspect-[3/2] rounded-btn bg-surface-2 overflow-hidden">
+          <svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet" className="w-full h-full">
             <defs>
-              <linearGradient id="terekGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.6" />
+              <linearGradient id="terekGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#7dd3fc" />
+                <stop offset="100%" stopColor="#0ea5e9" />
               </linearGradient>
             </defs>
-            <circle cx="180" cy="120" r="40" fill="#86efac" opacity="0.35" />
-            <circle cx="430" cy="320" r="55" fill="#86efac" opacity="0.35" />
-            <circle cx="320" cy="80"  r="30" fill="#86efac" opacity="0.35" />
-            <path d="M 0 250 Q 150 200 300 230 T 600 220" stroke="url(#terekGrad)" strokeWidth="14" fill="none" />
-            <text x="20" y="245" fontSize="10" fill="#1e40af" fontWeight="bold">р. Терек</text>
-            <g stroke="#cbd5e1" strokeWidth="1.5" opacity="0.6">
-              <line x1="0"   y1="100" x2="600" y2="120" />
-              <line x1="0"   y1="180" x2="600" y2="200" />
-              <line x1="0"   y1="300" x2="600" y2="320" />
-              <line x1="120" y1="0"   x2="140" y2="400" />
-              <line x1="280" y1="0"   x2="300" y2="400" />
-              <line x1="440" y1="0"   x2="460" y2="400" />
-            </g>
+            {/* Река Терек */}
+            <path d="M0 100 Q150 140 300 180 T600 260" stroke="url(#terekGrad)" strokeWidth="14" fill="none" opacity="0.7" />
+            {/* Парки */}
+            <circle cx="120" cy="240" r="38" fill="#86efac" opacity="0.5" />
+            <circle cx="380" cy="90" r="30" fill="#86efac" opacity="0.5" />
+            <circle cx="500" cy="340" r="34" fill="#86efac" opacity="0.5" />
+            {/* Улицы */}
+            <line x1="0" y1="150" x2="600" y2="170" stroke="#cbd5e1" strokeWidth="2" />
+            <line x1="0" y1="220" x2="600" y2="240" stroke="#cbd5e1" strokeWidth="2" />
+            <line x1="0" y1="290" x2="600" y2="310" stroke="#cbd5e1" strokeWidth="2" />
+            <line x1="150" y1="0" x2="170" y2="400" stroke="#cbd5e1" strokeWidth="2" />
+            <line x1="320" y1="0" x2="340" y2="400" stroke="#cbd5e1" strokeWidth="2" />
+            <line x1="470" y1="0" x2="490" y2="400" stroke="#cbd5e1" strokeWidth="2" />
+            {/* Отели */}
             {Object.entries(HOTEL_POINTS).map(([id, p]) => (
               <g key={id}>
-                <rect x={p.x - 8} y={p.y - 8} width="16" height="16" rx="3" fill="#f59e0b" stroke="#fff" strokeWidth="2" />
-                <text x={p.x + 12} y={p.y + 4} fontSize="10" fill="currentColor" fontWeight="bold">{p.label}</text>
+                <rect x={p.x - 8} y={p.y - 8} width="16" height="16" fill="#f59e0b" rx="3" />
+                <text x={p.x + 12} y={p.y + 4} fontSize="10" fill="#1f2937">{p.name}</text>
               </g>
             ))}
-            {couriers.flatMap((c) => {
-              const hotelKeys = Object.keys(HOTEL_POINTS);
-              return c.orderIds.slice(0, 2).map((oid, i) => {
-                const target = HOTEL_POINTS[hotelKeys[i % hotelKeys.length]];
+            {/* Маршруты курьер → отель (по orderId.propertyId) */}
+            {couriers.map((c) => {
+              if (c.status === 'idle') return null;
+              const targets = c.orderIds
+                .map((oid: string) => orders.find((o) => o.id === oid))
+                .filter((o): o is RoomOrder => !!o);
+              const stroke = c.status === 'delivering' ? '#10b981' : '#a855f7';
+              return targets.map((o, i) => {
+                const hp = HOTEL_POINTS[o.propertyId] ?? HOTEL_POINTS.prop_1;
                 return (
-                  <line key={`${c.id}-${oid}`}
-                    x1={c.x} y1={c.y}
-                    x2={target.x} y2={target.y}
-                    stroke={c.status === 'delivering' ? '#10b981' : '#a855f7'}
-                    strokeWidth="2" strokeDasharray="5 4" opacity="0.7"
+                  <line
+                    key={c.id + '_' + i}
+                    x1={c.x} y1={c.y} x2={hp.x} y2={hp.y}
+                    stroke={stroke} strokeWidth="2" strokeDasharray="6 4" opacity="0.7"
                   />
                 );
               });
             })}
-            {couriers.map((c) => (
-              <g key={c.id}>
-                <circle cx={c.x} cy={c.y} r="14"
-                  fill={c.status === 'idle' ? '#94a3b8' : c.status === 'pickup' ? '#a855f7' : '#10b981'}
-                  stroke="#fff" strokeWidth="3">
-                  <animate attributeName="r" values="14;17;14" dur="2s" repeatCount="indefinite" />
-                </circle>
-                <text x={c.x} y={c.y + 4} fontSize="10" fill="#fff" fontWeight="bold" textAnchor="middle">К</text>
-              </g>
-            ))}
+            {/* Курьеры (анимированные) */}
+            {couriers.map((c) => {
+              const color = c.status === 'delivering' ? '#10b981' : c.status === 'pickup' ? '#a855f7' : '#94a3b8';
+              return (
+                <g key={c.id}>
+                  <circle cx={c.x} cy={c.y} r="14" fill={color} opacity="0.3">
+                    <animate attributeName="r" values="14;17;14" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx={c.x} cy={c.y} r="8" fill={color} />
+                  <text x={c.x} y={c.y + 26} fontSize="10" textAnchor="middle" fill="#1f2937" fontWeight="bold">{c.name.split(' ')[0]}</text>
+                </g>
+              );
+            })}
           </svg>
         </div>
+      </Card>
 
-        <div className="space-y-3">
-          {couriers.map((c) => {
-            const orders_ = active.filter((o) => c.orderIds.includes(o.id));
-            const statusLabel = c.status === 'idle' ? 'Свободен' : c.status === 'pickup' ? 'Забирает заказ' : 'В пути';
-            const statusTone: 'neutral' | 'primary' | 'success' = c.status === 'idle' ? 'neutral' : c.status === 'pickup' ? 'primary' : 'success';
-            return (
-              <div key={c.id} className="rounded-card border border-border p-3 bg-surface-2/40">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-xs font-bold">
-                    {c.name.split(' ').map((s) => s[0]).join('')}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-text truncate">{c.name}</p>
-                    <p className="text-[11px] text-text-muted">{c.phone}</p>
-                  </div>
-                  <Badge tone={statusTone}>{statusLabel}</Badge>
-                </div>
-                {orders_.length === 0 ? (
-                  <p className="text-[11px] text-text-muted">Нет активных заказов</p>
-                ) : (
-                  <div className="space-y-1">
-                    {orders_.map((o) => (
-                      <div key={o.id} className="flex items-center gap-2 text-[11px] p-1.5 rounded-btn bg-bg/60">
-                        <MapPin className="h-3 w-3 text-warning" />
-                        <span className="font-bold">№ {o.roomNumber}</span>
-                        <span className="text-text-muted truncate">{o.guestName}</span>
-                      </div>
-                    ))}
+      <div className="space-y-3">
+        {couriers.map((c) => (
+          <Card key={c.id} padding="md">
+            <div className="flex items-start gap-3">
+              <span className="h-10 w-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold shrink-0">
+                {c.name.split(' ').map((p) => p[0]).join('')}
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm truncate">{c.name}</div>
+                <div className="text-xs text-text-muted flex items-center gap-1"><Phone className="h-3 w-3" />{c.phone}</div>
+                <Badge tone={STATUS_BADGE_TONE[c.status]} className="mt-1">{STATUS_LABEL_RU[c.status]}</Badge>
+                {c.orderIds.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {c.orderIds.map((oid) => {
+                      const o = orders.find((x) => x.id === oid);
+                      if (!o) return null;
+                      return (
+                        <div key={oid} className="text-[11px] flex items-center gap-1 text-text-muted">
+                          <Navigation className="h-3 w-3" />
+                          №{o.roomNumber} · {o.guestName}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-            );
-          })}
-          <div className="rounded-card border border-border p-3 bg-info/5 text-[11px] text-text-muted">
-            <p className="font-bold text-text mb-1">Легенда</p>
-            <div className="flex items-center gap-2 mb-0.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" /> В пути</div>
-            <div className="flex items-center gap-2 mb-0.5"><span className="h-2.5 w-2.5 rounded-full bg-purple-500" /> Забирает заказ</div>
-            <div className="flex items-center gap-2 mb-0.5"><span className="h-2.5 w-2.5 rounded-full bg-slate-400" /> Свободен</div>
-            <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> Отель</div>
+            </div>
+          </Card>
+        ))}
+        <Card padding="md" className="bg-surface-2">
+          <h4 className="text-xs font-bold mb-2">Легенда</h4>
+          <div className="space-y-1 text-[11px]">
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-emerald-500" /> Доставляет</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-purple-500" /> Забирает заказ</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-slate-400" /> Свободен</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-sm bg-amber-500" /> Отель</div>
+            <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-emerald-300" /> Парк</div>
           </div>
-        </div>
+        </Card>
       </div>
-    </Card>
+    </div>
   );
 }

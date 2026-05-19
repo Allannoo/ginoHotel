@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   DndContext, useDraggable, useDroppable, type DragEndEvent, PointerSensor, useSensor, useSensors,
 } from '@dnd-kit/core';
-import { ChevronLeft, ChevronRight, Plus, FileText, Upload, BadgeCheck, CalendarDays, Undo2, Check, X, Coffee, Ban, Sparkles, Mail, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, FileText, Upload, BadgeCheck, CalendarDays, Undo2, Check, X, Coffee, Ban, Sparkles, Mail, Download, Info as InfoIcon } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -136,6 +136,7 @@ export default function GridPage() {
   const [zoom, setZoom] = useState<Zoom>('week');
   const [focusDate, setFocusDate] = useState<Date>(() => atMidnight(new Date()));
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   const [propertyFilter, setPropertyFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -445,25 +446,48 @@ export default function GridPage() {
               ]}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 rounded-btn bg-surface border border-border h-10">
-            {Object.entries(STATUS_STYLE).map(([k, v]) => (
-              <span key={k} className="flex items-center gap-1.5 text-[11px]">
-                <span className={cn('h-2.5 w-2.5 rounded-full', v.bg)} />
-                <span className="text-text-muted whitespace-nowrap">{v.label}</span>
-              </span>
-            ))}
-          </div>
-          {/* Легенда тарифов */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 rounded-btn bg-surface border border-border h-10">
-            {(Object.keys(TARIFF_META) as BookingTariff[]).map((k) => {
-              const m = TARIFF_META[k];
-              return (
-                <span key={k} className="flex items-center gap-1.5 text-[11px]">
-                  <span className="h-2.5 w-1 rounded-sm" style={{ background: m.color }} />
-                  <span className="text-text-muted whitespace-nowrap">{m.label}</span>
-                </span>
-              );
-            })}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="md"
+              leftIcon={<InfoIcon className="h-4 w-4" />}
+              onClick={() => setLegendOpen((v) => !v)}
+              aria-expanded={legendOpen}
+            >
+              Обозначения
+            </Button>
+            {legendOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setLegendOpen(false)} />
+                <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-2rem)] z-40 bg-surface border border-border rounded-card shadow-lift p-3 space-y-3">
+                  <div>
+                    <div className="text-[11px] font-bold text-text-muted uppercase tracking-wide mb-1.5">Статусы броней</div>
+                    <div className="grid grid-cols-1 gap-1">
+                      {Object.entries(STATUS_STYLE).map(([k, v]) => (
+                        <span key={k} className="flex items-center gap-2 text-xs">
+                          <span className={cn('h-2.5 w-2.5 rounded-full shrink-0', v.bg)} />
+                          <span className="text-text">{v.label}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t border-border pt-2">
+                    <div className="text-[11px] font-bold text-text-muted uppercase tracking-wide mb-1.5">Тарифы</div>
+                    <div className="grid grid-cols-1 gap-1">
+                      {(Object.keys(TARIFF_META) as BookingTariff[]).map((k) => {
+                        const m = TARIFF_META[k];
+                        return (
+                          <span key={k} className="flex items-center gap-2 text-xs">
+                            <span className="h-3 w-1 rounded-sm shrink-0" style={{ background: m.color }} />
+                            <span className="text-text">{m.label}</span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
           <Button size="md" leftIcon={<Plus className="h-4 w-4" />} onClick={() => {
             const r = rooms[0];

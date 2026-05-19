@@ -14,7 +14,7 @@ export const ALL_PERMISSIONS: PermissionKey[] = [
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, PermissionKey[]> = {
   admin: [...ALL_PERMISSIONS],
   manager: ['dashboard', 'grid', 'properties', 'guests', 'tasks', 'finance', 'pricing', 'expenses', 'roomservice', 'mvd', 'reports'],
-  reception: ['grid', 'guests', 'tasks', 'roomservice', 'locks', 'mvd'],
+  reception: ['dashboard', 'grid', 'guests', 'tasks', 'roomservice', 'locks', 'mvd'],
   cleaner: ['tasks'],
 };
 

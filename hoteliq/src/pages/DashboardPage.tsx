@@ -83,7 +83,8 @@ export default function DashboardPage() {
   const user = useCurrentUser();
   const role = user?.role ?? 'admin';
   const isReception = role === 'reception';
-  const isManagerial = role === 'admin' || role === 'manager';
+  const isAdmin = role === 'admin';
+  const isManager = role === 'manager';
   const [drillKey, setDrillKey] = useState<null | 'revenue' | 'occupancy' | 'adr' | 'revpar' | 'bookings' | 'guests' | 'checkin' | 'checkout' | 'free' | 'tasks' | 'margin'>(null);
 
   // Метрики для ресепшен — вычисляем из mock
@@ -107,7 +108,9 @@ export default function DashboardPage() {
   const greetName = user?.name?.split(' ')[0] ?? 'Алексей';
   const greetSubtitle = isReception
     ? 'Заезды, выезды и состояние номеров на смене'
-    : (isManagerial ? 'Финансовая сводка по объектам за сегодня' : 'Сводка за сегодня');
+    : isAdmin ? 'Финансовая сводка по объектам за сегодня'
+    : isManager ? 'Операционная сводка по объектам'
+    : 'Сводка за сегодня';
   return (
     <PageTransition>
       <PageHeader
@@ -129,7 +132,7 @@ export default function DashboardPage() {
           <KpiCard icon={<KeyRound className="h-5 w-5" />} label="Свободно номеров" value={freeRooms} format="number" delta={0} tone="success" onClick={() => setDrillKey('free')} />
           <KpiCard icon={<Sparkle className="h-5 w-5" />} label="К уборке" value={pendingHousekeeping} format="number" delta={0} tone="gold" onClick={() => setDrillKey('tasks')} />
         </StaggerList>
-      ) : isManagerial ? (
+      ) : isAdmin ? (
         <StaggerList className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           <KpiCard icon={<Wallet className="h-5 w-5" />} label="Выручка сегодня" value={kpiToday.revenueToday} format="compact-money" delta={12} tone="success" onClick={() => setDrillKey('revenue')} />
           <KpiCard icon={<PiggyBank className="h-5 w-5" />} label="Маржа" value={margin} format="percent" delta={2} tone="gold" onClick={() => setDrillKey('margin')} />
@@ -137,6 +140,15 @@ export default function DashboardPage() {
           <KpiCard icon={<BedDouble className="h-5 w-5" />} label="ADR" value={kpiToday.adr} format="money" delta={3} tone="gold" onClick={() => setDrillKey('adr')} />
           <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="RevPAR" value={kpiToday.revpar} format="money" delta={-2} tone="info" onClick={() => setDrillKey('revpar')} />
           <KpiCard icon={<Percent className="h-5 w-5" />} label="Выручка / мес." value={monthRevenue} format="compact-money" delta={9} tone="success" />
+        </StaggerList>
+      ) : isManager ? (
+        <StaggerList className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+          <KpiCard icon={<Activity className="h-5 w-5" />} label="Загрузка" value={kpiToday.occupancy} format="percent" delta={4} tone="primary" onClick={() => setDrillKey('occupancy')} />
+          <KpiCard icon={<CalendarCheck className="h-5 w-5" />} label="Активные брони" value={kpiToday.activeBookings} format="number" delta={8} tone="primary" onClick={() => setDrillKey('bookings')} />
+          <KpiCard icon={<Users className="h-5 w-5" />} label="Гости сегодня" value={kpiToday.guestsToday} format="number" delta={5} tone="success" onClick={() => setDrillKey('guests')} />
+          <KpiCard icon={<BedDouble className="h-5 w-5" />} label="ADR" value={kpiToday.adr} format="money" delta={3} tone="gold" onClick={() => setDrillKey('adr')} />
+          <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="RevPAR" value={kpiToday.revpar} format="money" delta={-2} tone="info" onClick={() => setDrillKey('revpar')} />
+          <KpiCard icon={<Sparkle className="h-5 w-5" />} label="К уборке" value={pendingHousekeeping} format="number" delta={0} tone="gold" onClick={() => setDrillKey('tasks')} />
         </StaggerList>
       ) : (
         <StaggerList className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
