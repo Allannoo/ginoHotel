@@ -56,6 +56,10 @@ export const useBookings = create<BookingsState>()(
     }),
     {
       name: 'ginohotel-bookings',
+      // Версия 2: моковые брони перегенерированы без наложений по номеру.
+      // Старый localStorage-кэш игнорируется и заменяется свежим seed-набором.
+      version: 2,
+      migrate: () => ({ bookings: seedBookings, guests: seedGuests }) as Partial<BookingsState>,
       // Не сохраняем `hydrated`, помечаем после восстановления
       partialize: (s) => ({ bookings: s.bookings, guests: s.guests }),
       onRehydrateStorage: () => (state) => {

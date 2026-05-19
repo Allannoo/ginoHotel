@@ -146,31 +146,47 @@ export const guests: Guest[] = Array.from({ length: 85 }).map((_, i) => {
 const BOOKING_STATUSES: BookingStatus[] = ['confirmed', 'confirmed', 'confirmed', 'pending', 'checkin', 'checkout', 'blocked'];
 const CHANNELS: Channel[] = ['ostrovok', 'yandex', 'sutochno', 'otello', '101hotels', 'avito', 'direct'];
 
-export const bookings: Booking[] = Array.from({ length: 160 }).map((_, i) => {
-  const room = pick(rooms);
-  const guest = pick(guests);
-  const startOffset = range(-15, 45);
-  const length = range(1, 7);
-  const start = addDays(new Date(), startOffset);
-  const end = addDays(start, length);
-  const status: BookingStatus = startOffset < -1 ? 'checkout'
-    : startOffset === 0 ? 'checkin'
-    : pick(BOOKING_STATUSES);
-  return {
-    id: `book_${i + 1}`,
-    roomId: room.id,
-    propertyId: room.propertyId,
-    guestId: guest.id,
-    guestName: `${guest.firstName} ${guest.lastName}`,
-    channel: pick(CHANNELS),
-    status,
-    checkIn: isoDate(start),
-    checkOut: isoDate(end),
-    guests: range(1, room.capacity),
-    amount: room.basePrice * length,
-    notes: rng() > 0.85 ? 'Поздний заезд, оставить ключ на ресепшен.' : undefined,
-  };
-});
+export const bookings: Booking[] = (() => {
+  const result: Booking[] = [];
+  // Карта: roomId → отсортированные интервалы [start, end). Используется для проверки наложений.
+  const perRoom = new Map<string, { start: Date; end: Date }[]>();
+  let attempts = 0;
+  const TARGET = 160;
+  const MAX_ATTEMPTS = 4000;
+  while (result.length < TARGET && attempts < MAX_ATTEMPTS) {
+    attempts++;
+    const room = pick(rooms);
+    const guest = pick(guests);
+    const startOffset = range(-15, 45);
+    const length = range(1, 7);
+    const start = addDays(new Date(), startOffset);
+    const end = addDays(start, length);
+    const existing = perRoom.get(room.id) ?? [];
+    // Полуоткрытый интервал [start, end): back-to-back (checkOut == следующий checkIn) допустим.
+    const overlaps = existing.some((iv) => start < iv.end && end > iv.start);
+    if (overlaps) continue;
+    existing.push({ start, end });
+    perRoom.set(room.id, existing);
+    const status: BookingStatus = startOffset < -1 ? 'checkout'
+      : startOffset === 0 ? 'checkin'
+      : pick(BOOKING_STATUSES);
+    result.push({
+      id: `book_${result.length + 1}`,
+      roomId: room.id,
+      propertyId: room.propertyId,
+      guestId: guest.id,
+      guestName: `${guest.firstName} ${guest.lastName}`,
+      channel: pick(CHANNELS),
+      status,
+      checkIn: isoDate(start),
+      checkOut: isoDate(end),
+      guests: range(1, room.capacity),
+      amount: room.basePrice * length,
+      notes: rng() > 0.85 ? 'Поздний заезд, оставить ключ на ресепшен.' : undefined,
+    });
+  }
+  return result;
+})();
 
 // ============================================================
 // Каналы продаж
