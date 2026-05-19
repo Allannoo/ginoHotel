@@ -1,6 +1,6 @@
 // Настройки: профиль / API / уведомления / пользователи
 import { useState } from 'react';
-import { User, Key, Bell, Users as UsersIcon, Copy, Plus, Shield } from 'lucide-react';
+import { User, Key, Bell, Users as UsersIcon, Copy, Plus, Shield, Bot } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -64,7 +64,7 @@ function ProfileTab() {
         <div className="grid grid-cols-2 gap-4">
           <Input label="Имя" defaultValue="Алексей" />
           <Input label="Фамилия" defaultValue="Смирнов" />
-          <Input label="Email" defaultValue="a.smirnov@hoteliq.ru" />
+          <Input label="Email" defaultValue="a.smirnov@ginohotel.ru" />
           <Input label="Телефон" defaultValue="+7 (999) 123-45-67" />
         </div>
         <div className="mt-4">
@@ -95,7 +95,7 @@ function ProfileTab() {
 
 function ApiTab() {
   const { push } = useToast();
-  const token = 'sk_live_hoteliq_4f7a92bd6c1e8f9a';
+  const token = 'sk_live_ginohotel_4f7a92bd6c1e8f9a';
   return (
     <Card padding="md">
       <CardHeader title="API-токены" subtitle="Для интеграций с внешними системами" />
@@ -139,9 +139,9 @@ function NotifTab() {
       <Card padding="md">
         <CardHeader title="Telegram-бот" subtitle="Получайте уведомления в Telegram" />
         <div className="p-4 rounded-btn bg-info/10 border border-info/30 flex items-center gap-3">
-          <span className="text-3xl">🤖</span>
+          <div className="h-12 w-12 rounded-btn bg-gradient-to-br from-info to-primary flex items-center justify-center text-white shrink-0 shadow-soft"><Bot className="h-6 w-6" /></div>
           <div className="flex-1">
-            <p className="font-bold text-text">@HotelIQBot</p>
+            <p className="font-bold text-text">@GinoHotelBot</p>
             <p className="text-xs text-text-muted">Чтобы подключить, отправьте боту ваш ID: <span className="font-mono font-bold">HQ-9847</span></p>
           </div>
           <Button>Подключить</Button>

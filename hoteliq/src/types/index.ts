@@ -1,5 +1,5 @@
 // ============================================================
-// Типы доменной модели HotelIQ
+// Типы доменной модели GinoHotel
 // ============================================================
 
 export type PropertyType = 'hotel' | 'apartment';
@@ -12,7 +12,7 @@ export interface Property {
   address: string;
   description: string;
   rating: number;
-  cover: string; // эмодзи/иконка как плейсхолдер фото
+  cover: string; // ключ обложки (см. PropertyCover)
   rooms: number;
   occupancy: number; // %
   revenueMonth: number;
@@ -75,7 +75,7 @@ export interface Guest {
   email: string;
   phone: string;
   country: string;
-  avatar: string; // url или эмодзи
+  avatar: string; // зарезервировано, инициалы рендерятся через Avatar
   staysCount: number;
   totalSpent: number;
   tags: GuestTag[];

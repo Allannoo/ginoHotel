@@ -11,7 +11,7 @@ import { cn } from '@/utils/format';
 
 const nav = [
   { to: '/', icon: LayoutDashboard, label: 'Дашборд', end: true },
-  { to: '/grid', icon: CalendarRange, label: 'Шахматка' },
+  { to: '/grid', icon: CalendarRange, label: 'Календарь броней' },
   { to: '/properties', icon: Building2, label: 'Объекты' },
   { to: '/channels', icon: Radio, label: 'Каналы' },
   { to: '/guests', icon: Users, label: 'Гости' },
@@ -44,10 +44,10 @@ export function Sidebar() {
       >
         {/* Лого */}
         <div className={cn('h-16 flex items-center border-b border-border px-4 gap-3', collapsed && 'lg:justify-center lg:px-2')}>
-          <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center text-gold font-display text-lg shrink-0">H</div>
+          <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-primary to-gold flex items-center justify-center text-white font-display text-lg shrink-0 shadow-soft">G</div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="font-display text-lg leading-none text-text">HotelIQ</p>
+              <p className="font-display text-lg leading-none text-text">GinoHotel</p>
               <p className="text-[10px] text-text-muted mt-0.5">PMS Platform</p>
             </div>
           )}

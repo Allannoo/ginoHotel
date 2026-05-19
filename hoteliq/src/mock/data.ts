@@ -36,21 +36,21 @@ export const properties: Property[] = [
     id: 'prop_h1', name: 'Гранд-Отель «Метрополь»', type: 'hotel',
     city: 'Москва', address: 'Театральный пр., 2',
     description: 'Исторический пятизвёздочный отель в самом центре столицы.',
-    rating: 4.8, cover: '🏨', rooms: 24, occupancy: 87, revenueMonth: 8_420_000,
+    rating: 4.8, cover: 'hotel-classic', rooms: 24, occupancy: 87, revenueMonth: 8_420_000,
     amenities: ['Wi-Fi', 'Завтрак', 'Спа', 'Паркинг', 'Бизнес-центр'],
   },
   {
     id: 'prop_h2', name: 'Бутик-Отель «Северная Венеция»', type: 'hotel',
     city: 'Санкт-Петербург', address: 'наб. реки Фонтанки, 25',
     description: 'Камерный бутик-отель с видом на канал.',
-    rating: 4.7, cover: '🏛️', rooms: 14, occupancy: 78, revenueMonth: 3_120_000,
+    rating: 4.7, cover: 'hotel-boutique', rooms: 14, occupancy: 78, revenueMonth: 3_120_000,
     amenities: ['Wi-Fi', 'Завтрак', 'Кафе', 'Прачечная'],
   },
   {
     id: 'prop_h3', name: 'Resort «Морская Жемчужина»', type: 'hotel',
     city: 'Сочи', address: 'ул. Приморская, 14',
     description: 'Курортный отель на берегу Чёрного моря.',
-    rating: 4.6, cover: '🌴', rooms: 18, occupancy: 92, revenueMonth: 6_800_000,
+    rating: 4.6, cover: 'hotel-resort', rooms: 18, occupancy: 92, revenueMonth: 6_800_000,
     amenities: ['Wi-Fi', 'Бассейн', 'Пляж', 'Спа', 'Ресторан'],
   },
   ...Array.from({ length: 8 }).map((_, i) => {
@@ -64,7 +64,7 @@ export const properties: Property[] = [
       address: `${streets[i]}, ${range(1, 120)}`,
       description: 'Современные апартаменты для краткосрочной аренды.',
       rating: 4 + rng(),
-      cover: ['🏢', '🏠', '🏘️', '🏚️', '🏬', '🌆', '🏙️', '🌇'][i],
+      cover: (['apt-modern', 'apt-loft', 'apt-sky', 'apt-park', 'apt-center', 'apt-light', 'apt-avenue', 'apt-residence'] as const)[i],
       rooms: range(1, 3),
       occupancy: range(55, 95),
       revenueMonth: range(180_000, 420_000),
@@ -105,7 +105,7 @@ export const rooms: Room[] = properties.flatMap((p) => {
 const FIRST = ['Александр', 'Мария', 'Дмитрий', 'Анна', 'Сергей', 'Елена', 'Иван', 'Ольга', 'Андрей', 'Татьяна', 'Михаил', 'Наталья', 'Юрий', 'Ирина', 'Владимир'];
 const LAST = ['Иванов', 'Петрова', 'Смирнов', 'Кузнецова', 'Попов', 'Соколова', 'Лебедев', 'Козлова', 'Новиков', 'Морозова', 'Волков', 'Соловьёва', 'Васильев', 'Зайцева', 'Павлов'];
 const COUNTRIES = ['Россия', 'Россия', 'Россия', 'Россия', 'Беларусь', 'Казахстан', 'Германия', 'Турция', 'Китай', 'Армения'];
-const AVATARS = ['👨', '👩', '🧑', '👨‍💼', '👩‍💼', '🧔', '👱‍♀️', '👨‍🦱', '👩‍🦰', '🧓'];
+const AVATARS = [''];
 const TAGS_POOL: GuestTag[] = ['VIP', 'Постоянный', 'Новый', 'Корпоративный'];
 const TIERS: LoyaltyTier[] = ['Bronze', 'Silver', 'Gold', 'Platinum'];
 
@@ -128,7 +128,7 @@ export const guests: Guest[] = Array.from({ length: 85 }).map((_, i) => {
     email: `${fn.toLowerCase()}.${ln.toLowerCase()}${i}@example.com`.replace(/[^\w.@]/g, ''),
     phone: `+7 (9${range(10, 99)}) ${range(100, 999)}-${range(10, 99)}-${range(10, 99)}`,
     country: pick(COUNTRIES),
-    avatar: pick(AVATARS),
+    avatar: '',
     staysCount: stays,
     totalSpent: stays * range(8000, 35000),
     tags,
@@ -176,12 +176,12 @@ export const bookings: Booking[] = Array.from({ length: 160 }).map((_, i) => {
 // Каналы продаж
 // ============================================================
 export const channels: ChannelConnection[] = [
-  { id: 'ch_1', channel: 'ostrovok', name: 'Островок', icon: '🏝️', connected: true, hasError: false, lastSync: '2 минуты назад', activeBookings: 34, markup: 0 },
-  { id: 'ch_2', channel: 'yandex', name: 'Яндекс.Путешествия', icon: '🟡', connected: true, hasError: false, lastSync: '5 минут назад', activeBookings: 22, markup: 5 },
-  { id: 'ch_3', channel: 'sutochno', name: 'Суточно.ру', icon: '🏠', connected: true, hasError: false, lastSync: '12 минут назад', activeBookings: 18, markup: 3 },
-  { id: 'ch_4', channel: 'otello', name: 'Отелло', icon: '🎭', connected: true, hasError: false, lastSync: '1 час назад', activeBookings: 9, markup: 0 },
-  { id: 'ch_5', channel: '101hotels', name: '101Hotels', icon: '💯', connected: false, hasError: true, lastSync: '6 часов назад', activeBookings: 0, markup: 0 },
-  { id: 'ch_6', channel: 'avito', name: 'Авито Недвижимость', icon: '📋', connected: false, hasError: false, lastSync: 'никогда', activeBookings: 0, markup: 0 },
+  { id: 'ch_1', channel: 'ostrovok', name: 'Островок', icon: 'ostrovok', connected: true, hasError: false, lastSync: '2 минуты назад', activeBookings: 34, markup: 0 },
+  { id: 'ch_2', channel: 'yandex', name: 'Яндекс.Путешествия', icon: 'yandex', connected: true, hasError: false, lastSync: '5 минут назад', activeBookings: 22, markup: 5 },
+  { id: 'ch_3', channel: 'sutochno', name: 'Суточно.ру', icon: 'sutochno', connected: true, hasError: false, lastSync: '12 минут назад', activeBookings: 18, markup: 3 },
+  { id: 'ch_4', channel: 'otello', name: 'Отелло', icon: 'otello', connected: true, hasError: false, lastSync: '1 час назад', activeBookings: 9, markup: 0 },
+  { id: 'ch_5', channel: '101hotels', name: '101Hotels', icon: '101hotels', connected: false, hasError: true, lastSync: '6 часов назад', activeBookings: 0, markup: 0 },
+  { id: 'ch_6', channel: 'avito', name: 'Авито Недвижимость', icon: 'avito', connected: false, hasError: false, lastSync: 'никогда', activeBookings: 0, markup: 0 },
 ];
 
 export const syncLog: SyncLogEntry[] = Array.from({ length: 18 }).map((_, i) => {
@@ -226,23 +226,23 @@ export const tasks: Task[] = Array.from({ length: 32 }).map((_, i) => {
 // ============================================================
 const SHIFTS = ['off', 'morning', 'evening', 'night'] as const;
 export const staff: Staff[] = [
-  { id: 's_1', name: 'Мария Кузнецова', role: 'Старший администратор', avatar: '👩‍💼', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
-  { id: 's_2', name: 'Андрей Попов', role: 'Администратор', avatar: '👨‍💼', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
-  { id: 's_3', name: 'Светлана Орлова', role: 'Горничная', avatar: '👩', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
-  { id: 's_4', name: 'Игорь Никитин', role: 'Техник', avatar: '👨‍🔧', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
-  { id: 's_5', name: 'Юлия Соколова', role: 'Горничная', avatar: '👩‍🦰', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
-  { id: 's_6', name: 'Дмитрий Волков', role: 'Менеджер', avatar: '🧔', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
+  { id: 's_1', name: 'Мария Кузнецова', role: 'Старший администратор', avatar: '', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
+  { id: 's_2', name: 'Андрей Попов', role: 'Администратор', avatar: '', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
+  { id: 's_3', name: 'Светлана Орлова', role: 'Горничная', avatar: '', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
+  { id: 's_4', name: 'Игорь Никитин', role: 'Техник', avatar: '', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
+  { id: 's_5', name: 'Юлия Соколова', role: 'Горничная', avatar: '', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
+  { id: 's_6', name: 'Дмитрий Волков', role: 'Менеджер', avatar: '', schedule: Array.from({ length: 7 }, () => pick([...SHIFTS])) },
 ];
 
 // ============================================================
 // Пользователи системы
 // ============================================================
 export const users: User[] = [
-  { id: 'u_1', name: 'Алексей Смирнов', email: 'a.smirnov@hoteliq.ru', role: 'admin', active: true },
-  { id: 'u_2', name: 'Мария Кузнецова', email: 'm.kuznetsova@hoteliq.ru', role: 'manager', active: true },
-  { id: 'u_3', name: 'Андрей Попов', email: 'a.popov@hoteliq.ru', role: 'reception', active: true },
-  { id: 'u_4', name: 'Светлана Орлова', email: 's.orlova@hoteliq.ru', role: 'cleaner', active: true },
-  { id: 'u_5', name: 'Игорь Никитин', email: 'i.nikitin@hoteliq.ru', role: 'reception', active: false },
+  { id: 'u_1', name: 'Алексей Смирнов', email: 'a.smirnov@ginohotel.ru', role: 'admin', active: true },
+  { id: 'u_2', name: 'Мария Кузнецова', email: 'm.kuznetsova@ginohotel.ru', role: 'manager', active: true },
+  { id: 'u_3', name: 'Андрей Попов', email: 'a.popov@ginohotel.ru', role: 'reception', active: true },
+  { id: 'u_4', name: 'Светлана Орлова', email: 's.orlova@ginohotel.ru', role: 'cleaner', active: true },
+  { id: 'u_5', name: 'Игорь Никитин', email: 'i.nikitin@ginohotel.ru', role: 'reception', active: false },
 ];
 
 // ============================================================
@@ -278,9 +278,9 @@ export const channelDistribution = [
 ];
 
 export const aiInsights = [
-  { id: 'ai_1', icon: '📈', title: 'Повысьте цены на выходные', text: 'Прогноз загрузки на сб/вс — 96%. Рекомендуем поднять тариф Deluxe на 12%.' },
-  { id: 'ai_2', icon: '⚠️', title: 'Просадка на канале Суточно.ру', text: 'За 7 дней брони упали на 24%. Проверьте видимость и цены.' },
-  { id: 'ai_3', icon: '🎯', title: 'Конверсия Яндекса выросла', text: 'CTR +18%. Увеличьте бюджет на продвижение или квоту номеров.' },
+  { id: 'ai_1', icon: 'trending', title: 'Повысьте цены на выходные', text: 'Прогноз загрузки на сб/вс — 96%. Рекомендуем поднять тариф Deluxe на 12%.' },
+  { id: 'ai_2', icon: 'warning', title: 'Просадка на канале Суточно.ру', text: 'За 7 дней брони упали на 24%. Проверьте видимость и цены.' },
+  { id: 'ai_3', icon: 'target', title: 'Конверсия Яндекса выросла', text: 'CTR +18%. Увеличьте бюджет на продвижение или квоту номеров.' },
 ];
 
 export const alerts = [

@@ -1,6 +1,6 @@
 {
-  "name": "HotelIQ",
-  "short_name": "HotelIQ",
+  "name": "GinoHotel",
+  "short_name": "GinoHotel",
   "description": "Платформа управления отелями и посуточной недвижимостью",
   "start_url": "/",
   "display": "standalone",

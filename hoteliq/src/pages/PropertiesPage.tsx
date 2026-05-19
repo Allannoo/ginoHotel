@@ -1,7 +1,7 @@
 // Управление объектами: карточки/таблица, мастер из 4 шагов
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LayoutGrid, List, MapPin, Star, Plus, Wifi, Coffee, Sparkles, Car, ChevronRight } from 'lucide-react';
+import { LayoutGrid, List, MapPin, Star, Plus, Wifi, Coffee, Sparkles, Car, ChevronRight, Camera, Image as ImageIcon } from 'lucide-react';
 import { PageTransition, StaggerList, staggerItem } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { PropertyCover } from '@/components/ui/PropertyCover';
 import { properties as initialProps, rooms } from '@/mock/data';
 import { fmtMoney, fmtPct, cn } from '@/utils/format';
 import type { Property } from '@/types';
@@ -52,9 +53,7 @@ export default function PropertiesPage() {
           {list.map((p) => (
             <motion.div key={p.id} variants={staggerItem}>
               <Card hoverable padding="none" onClick={() => setSelected(p)}>
-                <div className="h-40 bg-gradient-to-br from-primary/80 to-gold/80 flex items-center justify-center text-6xl">
-                  {p.cover}
-                </div>
+                <PropertyCover cover={p.cover} className="h-44" size="lg" />
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-2">
                     <Badge tone={p.type === 'hotel' ? 'primary' : 'gold'}>
@@ -93,7 +92,7 @@ export default function PropertiesPage() {
               {list.map((p) => (
                 <tr key={p.id} className="border-t border-border hover:bg-surface-2/50 cursor-pointer" onClick={() => setSelected(p)}>
                   <td className="px-4 py-3 flex items-center gap-3">
-                    <span className="text-2xl">{p.cover}</span>
+                    <PropertyCover cover={p.cover} className="h-10 w-10 rounded-btn" size="sm" />
                     <span className="font-bold text-text">{p.name}</span>
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">{p.city}</td>
@@ -153,7 +152,7 @@ function PropertyWizard({ open, onClose, onCreate }: {
       address: form.address || '—',
       description: form.description,
       rating: 5,
-      cover: '🏨',
+      cover: 'hotel-classic',
       rooms: 1,
       occupancy: 0,
       revenueMonth: 0,
@@ -228,13 +227,13 @@ function PropertyWizard({ open, onClose, onCreate }: {
       {step === 2 && (
         <div>
           <div className="border-2 border-dashed border-border rounded-card p-10 text-center hover:border-primary cursor-pointer transition-colors">
-            <div className="text-5xl mb-3">📸</div>
+            <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center"><Camera className="h-7 w-7 text-primary" /></div>
             <p className="font-bold text-text">Перетащите фотографии</p>
             <p className="text-xs text-text-muted mt-1">или нажмите для выбора файлов (JPG, PNG, до 10 МБ)</p>
           </div>
           <div className="grid grid-cols-4 gap-2 mt-4">
-            {['🏨', '🛏️', '🛁', '🌆'].map((e, i) => (
-              <div key={i} className="aspect-square rounded-btn bg-surface-2 flex items-center justify-center text-4xl">{e}</div>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="aspect-square rounded-btn bg-gradient-to-br from-surface-2 to-border flex items-center justify-center"><ImageIcon className="h-6 w-6 text-text-muted" /></div>
             ))}
           </div>
         </div>
@@ -291,7 +290,12 @@ function PropertyDetailModal({ property, onClose }: { property: Property | null;
             <Card padding="sm"><Stat label="Номеров" value={`${property.rooms}`} /></Card>
             <Card padding="sm"><Stat label="OCC" value={fmtPct(property.occupancy)} /></Card>
             <Card padding="sm"><Stat label="Выручка/мес" value={fmtMoney(property.revenueMonth, { compact: true })} /></Card>
-            <Card padding="sm"><Stat label="Рейтинг" value={`${property.rating.toFixed(1)} ⭐`} /></Card>
+            <Card padding="sm">
+              <p className="text-[10px] uppercase font-bold text-text-muted">Рейтинг</p>
+              <p className="font-display text-2xl mt-1 flex items-center gap-1">
+                {property.rating.toFixed(1)} <Star className="h-4 w-4 text-gold fill-gold" />
+              </p>
+            </Card>
           </div>
           <div>
             <p className="text-xs font-bold uppercase text-text-muted mb-2">Удобства</p>
@@ -335,8 +339,8 @@ function PropertyDetailModal({ property, onClose }: { property: Property | null;
 
       {tab === 'photos' && (
         <div className="grid grid-cols-3 gap-3">
-          {['🏨', '🛏️', '🛁', '🪟', '🍽️', '🌆', '🛋️', '🌿', '✨'].map((e, i) => (
-            <div key={i} className="aspect-video rounded-btn bg-gradient-to-br from-primary/20 to-gold/20 flex items-center justify-center text-4xl">{e}</div>
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="aspect-video rounded-btn bg-gradient-to-br from-primary/20 to-gold/20 flex items-center justify-center"><ImageIcon className="h-8 w-8 text-primary/60" /></div>
           ))}
         </div>
       )}

@@ -19,19 +19,19 @@ const storageSet = (k: string, v: boolean) => {
 };
 
 export const useUi = create<UiStore>((set, get) => ({
-  sidebarCollapsed: storageGet('hoteliq.sidebar', false),
+  sidebarCollapsed: storageGet('ginohotel.sidebar', false),
   toggleSidebar: () => {
     const v = !get().sidebarCollapsed;
-    storageSet('hoteliq.sidebar', v);
+    storageSet('ginohotel.sidebar', v);
     set({ sidebarCollapsed: v });
   },
   mobileDrawerOpen: false,
   setMobileDrawer: (open) => set({ mobileDrawerOpen: open }),
   cmdkOpen: false,
   setCmdk: (open) => set({ cmdkOpen: open }),
-  onboardingDone: storageGet('hoteliq.onboarding', false),
+  onboardingDone: storageGet('ginohotel.onboarding', false),
   finishOnboarding: () => {
-    storageSet('hoteliq.onboarding', true);
+    storageSet('ginohotel.onboarding', true);
     set({ onboardingDone: true });
   },
 }));

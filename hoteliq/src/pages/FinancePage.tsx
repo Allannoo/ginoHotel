@@ -45,7 +45,7 @@ export default function FinancePage() {
       const csv = ['id,guest,check_in,check_out,amount,channel', ...rows].join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'hoteliq-transactions.csv'; a.click();
+      const a = document.createElement('a'); a.href = url; a.download = 'ginohotel-transactions.csv'; a.click();
       URL.revokeObjectURL(url);
       push({ tone: 'success', title: 'CSV экспортирован' });
     } else {

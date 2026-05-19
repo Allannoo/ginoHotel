@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
   TrendingUp, Wallet, BedDouble, Activity, Users, CalendarCheck,
-  Sparkles, AlertTriangle, AlertCircle, Info, ArrowUpRight, ArrowDownRight,
+  Sparkles, AlertTriangle, AlertCircle, Info, ArrowUpRight, ArrowDownRight, Target,
 } from 'lucide-react';
 import { PageTransition, StaggerList, staggerItem } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -14,6 +14,7 @@ import { Card, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { CountUp } from '@/components/ui/CountUp';
 import { Button } from '@/components/ui/Button';
+import { Avatar } from '@/components/ui/Avatar';
 import {
   kpiToday, bookingTrend, channelDistribution, aiInsights, alerts, upcomingCheckins,
 } from '@/mock/data';
@@ -156,15 +157,26 @@ export default function DashboardPage() {
             subtitle="Рекомендации на сегодня"
           />
           <div className="space-y-3">
-            {aiInsights.map((a) => (
-              <div key={a.id} className="flex gap-3 p-3 rounded-btn bg-surface-2 hover-lift cursor-pointer">
-                <div className="text-2xl">{a.icon}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-text">{a.title}</p>
-                  <p className="text-xs text-text-muted leading-snug mt-1">{a.text}</p>
+            {aiInsights.map((a) => {
+              const INSIGHT_ICON: Record<string, { Icon: typeof TrendingUp; tone: string }> = {
+                trending: { Icon: TrendingUp, tone: 'bg-success/15 text-success' },
+                warning: { Icon: AlertTriangle, tone: 'bg-warning/15 text-warning' },
+                target: { Icon: Target, tone: 'bg-primary/15 text-primary' },
+              };
+              const cfg = INSIGHT_ICON[a.icon] ?? INSIGHT_ICON.target;
+              const { Icon } = cfg;
+              return (
+                <div key={a.id} className="flex gap-3 p-3 rounded-btn bg-surface-2 hover-lift cursor-pointer">
+                  <div className={cn('h-9 w-9 rounded-btn flex items-center justify-center shrink-0', cfg.tone)}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-text">{a.title}</p>
+                    <p className="text-xs text-text-muted leading-snug mt-1">{a.text}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
 
@@ -203,9 +215,7 @@ export default function DashboardPage() {
             )}
             {upcomingCheckins.map(({ booking, guest, property }) => (
               <div key={booking.id} className="flex items-center gap-3 p-2 rounded-btn hover:bg-surface-2 transition-colors cursor-pointer">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg shrink-0">
-                  {guest.avatar}
-                </div>
+                <Avatar name={`${guest.firstName} ${guest.lastName}`} size="sm" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-text truncate">{guest.firstName} {guest.lastName}</p>
                   <p className="text-xs text-text-muted truncate">{property.name}</p>

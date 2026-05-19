@@ -1,18 +1,15 @@
-// Шахматка бронирований: timeline номера × дни + drag&drop
+// Календарь броней: timeline номера × дни + drag&drop
 import { useMemo, useState } from 'react';
 import {
   DndContext, useDraggable, useDroppable, type DragEndEvent, PointerSensor, useSensor, useSensors,
 } from '@dnd-kit/core';
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Filter, Plus, X, ZoomIn } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, FileText } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
-import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input, Select } from '@/components/ui/Input';
-import { Skeleton } from '@/components/ui/Skeleton';
 import {
   bookings as initialBookings, rooms, properties, guests,
 } from '@/mock/data';
@@ -107,7 +104,6 @@ export default function GridPage() {
   const [bookingList, setBookingList] = useState<Booking[]>(initialBookings);
   const [selected, setSelected] = useState<Booking | null>(null);
   const [createCtx, setCreateCtx] = useState<{ roomId: string; date: string } | null>(null);
-  const [showFilters, setShowFilters] = useState(true);
   const { push } = useToast();
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -181,66 +177,50 @@ export default function GridPage() {
 
   return (
     <PageTransition>
-      <PageHeader
-        title="Шахматка"
-        subtitle={`${visibleRooms.length} номеров • ${visibleBookings.length} броней в выбранном диапазоне`}
-        action={
-          <>
-            <Button variant="outline" size="md" leftIcon={<Filter className="h-4 w-4" />} onClick={() => setShowFilters((s) => !s)}>
-              Фильтры
-            </Button>
-            <Button size="md" leftIcon={<Plus className="h-4 w-4" />}>Новая бронь</Button>
-          </>
-        }
-      />
+      {/* Шапка с фильтрами и легендой на уровне заголовка */}
+      <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4 mb-5">
+        <div className="shrink-0">
+          <h1 className="font-display text-3xl text-text leading-none">Календарь броней</h1>
+          <p className="text-sm text-text-muted mt-2">{visibleRooms.length} номеров · {visibleBookings.length} броней в выбранном диапазоне</p>
+        </div>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="w-44">
+            <Select
+              label="Объект"
+              value={propertyFilter}
+              onChange={(e) => setPropertyFilter(e.target.value)}
+              options={[{ value: 'all', label: 'Все объекты' }, ...properties.map((p) => ({ value: p.id, label: p.name }))]}
+            />
+          </div>
+          <div className="w-44">
+            <Select
+              label="Статус"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              options={[
+                { value: 'all', label: 'Все статусы' },
+                { value: 'confirmed', label: 'Подтверждено' },
+                { value: 'pending', label: 'Ожидание' },
+                { value: 'checkin', label: 'Заезд' },
+                { value: 'checkout', label: 'Выезд' },
+                { value: 'blocked', label: 'Блок' },
+              ]}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 rounded-btn bg-surface border border-border h-10">
+            {Object.entries(STATUS_STYLE).map(([k, v]) => (
+              <span key={k} className="flex items-center gap-1.5 text-[11px]">
+                <span className={cn('h-2.5 w-2.5 rounded-full', v.bg)} />
+                <span className="text-text-muted whitespace-nowrap">{v.label}</span>
+              </span>
+            ))}
+          </div>
+          <Button size="md" leftIcon={<Plus className="h-4 w-4" />}>Новая бронь</Button>
+        </div>
+      </div>
 
-      <div className="flex gap-4">
-        {/* Боковая панель фильтров */}
-        {showFilters && (
-          <motion.aside
-            initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-            className="w-64 shrink-0 hidden lg:block"
-          >
-            <Card padding="md">
-              <h3 className="font-display text-lg text-text mb-4">Фильтры</h3>
-              <div className="space-y-4">
-                <Select
-                  label="Объект"
-                  value={propertyFilter}
-                  onChange={(e) => setPropertyFilter(e.target.value)}
-                  options={[{ value: 'all', label: 'Все объекты' }, ...properties.map((p) => ({ value: p.id, label: p.name }))]}
-                />
-                <Select
-                  label="Статус"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  options={[
-                    { value: 'all', label: 'Все статусы' },
-                    { value: 'confirmed', label: 'Подтверждено' },
-                    { value: 'pending', label: 'Ожидание' },
-                    { value: 'checkin', label: 'Заезд' },
-                    { value: 'checkout', label: 'Выезд' },
-                    { value: 'blocked', label: 'Блок' },
-                  ]}
-                />
-                <div>
-                  <p className="text-xs font-semibold text-text-muted mb-2">Легенда</p>
-                  <div className="space-y-1.5">
-                    {Object.entries(STATUS_STYLE).map(([k, v]) => (
-                      <div key={k} className="flex items-center gap-2 text-xs">
-                        <span className={cn('h-3 w-3 rounded', v.bg)} />
-                        <span className="text-text-muted">{v.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </motion.aside>
-        )}
-
-        {/* Сама шахматка */}
-        <Card className="flex-1 min-w-0 overflow-hidden" padding="none">
+      {/* Календарь на всю ширину */}
+      <Card className="w-full overflow-hidden" padding="none">
           {/* Тулбар */}
           <div className="flex items-center justify-between p-3 border-b border-border gap-2">
             <div className="flex items-center gap-1">
@@ -266,7 +246,7 @@ export default function GridPage() {
           </div>
 
           {/* Сетка */}
-          <div className="overflow-auto max-h-[calc(100vh-260px)]">
+          <div className="overflow-auto max-h-[calc(100vh-230px)]">
             <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
               <div className="flex">
                 {/* Левая колонка — номера */}
@@ -360,7 +340,6 @@ export default function GridPage() {
             </DndContext>
           </div>
         </Card>
-      </div>
 
       {/* Модалка деталей */}
       <BookingModal booking={selected} onClose={() => setSelected(null)} onChange={(updated) => {
@@ -413,8 +392,9 @@ function BookingModal({ booking, onClose, onChange }: {
         {guest && <Info label="Телефон" value={guest.phone} />}
       </div>
       {booking.notes && (
-        <div className="mt-4 p-3 rounded-btn bg-surface-2 text-sm text-text-muted">
-          📝 {booking.notes}
+        <div className="mt-4 p-3 rounded-btn bg-surface-2 text-sm text-text-muted flex items-start gap-2">
+          <FileText className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>{booking.notes}</span>
         </div>
       )}
     </Modal>

@@ -1,7 +1,7 @@
 // CRM Гостей: таблица + drawer-карточка
 import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Plus, MessageSquare, X, Mail, Phone, Award, AlertOctagon } from 'lucide-react';
+import { Search, Plus, MessageSquare, X, Mail, Phone, Award, AlertOctagon, FileText, UserSearch } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Avatar } from '@/components/ui/Avatar';
 import { guests as initial, bookings, properties } from '@/mock/data';
 import type { Guest, LoyaltyTier } from '@/types';
 import { fmtMoney, fmtDate, cn } from '@/utils/format';
@@ -70,7 +71,7 @@ export default function GuestsPage() {
 
       <Card padding="none" className="overflow-hidden">
         {filtered.length === 0 ? (
-          <EmptyState icon="🔍" title="Гости не найдены" description="Попробуйте изменить параметры поиска" />
+          <EmptyState icon={<UserSearch className="h-12 w-12 text-text-muted" />} title="Гости не найдены" description="Попробуйте изменить параметры поиска" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -89,7 +90,7 @@ export default function GuestsPage() {
                   )} onClick={() => setSelected(g)}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-lg">{g.avatar}</div>
+                        <Avatar name={`${g.firstName} ${g.lastName}`} size="sm" />
                         <div>
                           <p className="font-bold text-text">{g.firstName} {g.lastName}</p>
                           <p className="text-[11px] text-text-muted">с {fmtDate(g.registeredAt)}</p>
@@ -158,9 +159,7 @@ function GuestDetail({ guest, onClose, onMessage }: { guest: Guest; onClose: () 
       <div className="p-5 space-y-5">
         {/* Профиль */}
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary/20 to-gold/20 flex items-center justify-center text-3xl">
-            {guest.avatar}
-          </div>
+          <Avatar name={`${guest.firstName} ${guest.lastName}`} size="lg" />
           <div className="flex-1">
             <h3 className="font-display text-2xl text-text leading-none">{guest.firstName} {guest.lastName}</h3>
             <p className="text-xs text-text-muted mt-1">{guest.country} · с {fmtDate(guest.registeredAt)}</p>
@@ -217,7 +216,7 @@ function GuestDetail({ guest, onClose, onMessage }: { guest: Guest; onClose: () 
         {/* Заметки */}
         {guest.notes && (
           <div className="p-3 rounded-btn bg-warning/10 text-sm text-text">
-            <p className="font-bold mb-1">📝 Заметки</p>
+            <p className="font-bold mb-1 flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" />Заметки</p>
             <p className="text-text-muted">{guest.notes}</p>
           </div>
         )}

@@ -1,7 +1,7 @@
 // Менеджер каналов: подключения, синхронизация, лог
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, AlertCircle, Plug, RefreshCcw, Settings as Cog } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Plug, RefreshCcw, Settings as Cog, Compass, MapPin, Home, Theater, Hash, Tag } from 'lucide-react';
 import { PageTransition, StaggerList, staggerItem } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -13,6 +13,15 @@ import { channels as initial, syncLog, properties } from '@/mock/data';
 import type { ChannelConnection } from '@/types';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/utils/format';
+
+const CHANNEL_VISUAL: Record<string, { Icon: typeof Compass; gradient: string }> = {
+  ostrovok:   { Icon: Compass,  gradient: 'from-info to-primary' },
+  yandex:     { Icon: MapPin,   gradient: 'from-warning to-gold' },
+  sutochno:   { Icon: Home,     gradient: 'from-success to-info' },
+  otello:     { Icon: Theater,  gradient: 'from-primary to-info' },
+  '101hotels':{ Icon: Hash,     gradient: 'from-error to-warning' },
+  avito:      { Icon: Tag,      gradient: 'from-success to-gold' },
+};
 
 export default function ChannelsPage() {
   const [channels, setChannels] = useState(initial);
@@ -44,12 +53,15 @@ export default function ChannelsPage() {
 
       {/* Карточки каналов */}
       <StaggerList className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {channels.map((ch) => (
+        {channels.map((ch) => {
+          const cfg = CHANNEL_VISUAL[ch.channel] ?? CHANNEL_VISUAL.ostrovok;
+          const { Icon } = cfg;
+          return (
           <motion.div key={ch.id} variants={staggerItem}>
             <Card hoverable padding="md">
               <div className="flex items-start gap-3 mb-3">
-                <div className="h-12 w-12 rounded-btn bg-surface-2 flex items-center justify-center text-2xl shrink-0">
-                  {ch.icon}
+                <div className={cn('h-12 w-12 rounded-btn flex items-center justify-center shrink-0 bg-gradient-to-br text-white shadow-soft', cfg.gradient)}>
+                  <Icon className="h-6 w-6" strokeWidth={1.6} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-display text-lg text-text leading-tight">{ch.name}</h3>
@@ -91,7 +103,8 @@ export default function ChannelsPage() {
               </div>
             </Card>
           </motion.div>
-        ))}
+          );
+        })}
       </StaggerList>
 
       {/* Лог синхронизации */}

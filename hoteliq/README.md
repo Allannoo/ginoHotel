@@ -1,4 +1,4 @@
-# HotelIQ — Hotel Management Platform
+# GinoHotel — Hotel Management Platform
 
 Современная PMS-платформа для отелей и арендодателей. Дашборд, шахматка, каналы, гости, финансы, задачи и настройки.
 

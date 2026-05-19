@@ -1,12 +1,13 @@
 // Задачи: Kanban + статусы номеров + расписание персонала
 import { useState } from 'react';
 import { DndContext, useDraggable, useDroppable, type DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { Plus, Sparkles, Wrench, Eye, KeyRound, Calendar as CalIcon } from 'lucide-react';
+import { Plus, Sparkles, Wrench, Eye, KeyRound, Calendar as CalIcon, User, Clock } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Avatar } from '@/components/ui/Avatar';
 import { tasks as initial, staff, rooms, properties } from '@/mock/data';
 import type { Task, TaskStatus, RoomStatus } from '@/types';
 import { cn } from '@/utils/format';
@@ -126,8 +127,8 @@ function TaskCard({ task }: { task: Task }) {
       <p className="font-bold text-sm text-text leading-snug">{task.title}</p>
       <p className="text-xs text-text-muted mt-1">{task.description}</p>
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-        <span className="text-xs text-text-muted">👤 {task.assignee}</span>
-        <span className="text-xs font-bold text-text">⏱ {task.dueDate.slice(5)}</span>
+        <span className="flex items-center gap-1 text-xs text-text-muted"><User className="h-3 w-3" /> {task.assignee}</span>
+        <span className="flex items-center gap-1 text-xs font-bold text-text"><Clock className="h-3 w-3" /> {task.dueDate.slice(5)}</span>
       </div>
     </div>
   );
@@ -191,7 +192,7 @@ function ScheduleBoard() {
             <tr key={s.id} className="border-t border-border">
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{s.avatar}</span>
+                  <Avatar name={s.name} size="sm" />
                   <div>
                     <p className="font-bold text-text text-sm">{s.name}</p>
                     <p className="text-xs text-text-muted">{s.role}</p>
