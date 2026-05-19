@@ -11,11 +11,13 @@ import { Card, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input, Select, Textarea } from '@/components/ui/Input';
+import { Switch } from '@/components/ui/Switch';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/utils/format';
 import { useCurrentUser, useAuth } from '@/store/auth';
-import { useSettings, CHANNELS_CATALOG, EMAIL_TAGS, AUTO_MESSAGE_TEMPLATES } from '@/store/settings';
+import { useSettings, CHANNELS_CATALOG, EMAIL_TAGS, AUTO_MESSAGE_TEMPLATES, type MessengerKey } from '@/store/settings';
 import { TeamManager } from '@/components/TeamManager';
+import { ChannelConnectModal } from '@/components/ChannelConnectModal';
 
 const TABS = [
   { id: 'profile', label: 'Профиль', icon: User },
@@ -178,48 +180,85 @@ function SecurityTab() {
 function NotifTab() {
   const notif = useSettings((s) => s.notifications);
   const setNotif = useSettings((s) => s.setNotifications);
-  const items: Array<{ key: keyof typeof notif; label: string; hint?: string }> = [
-    { key: 'email', label: 'Email-уведомления', hint: 'Новые брони, отмены, отчёты' },
-    { key: 'sms', label: 'SMS-уведомления', hint: 'Только важные события' },
-    { key: 'telegram', label: 'Telegram', hint: 'Через @GinoHotelBot' },
-    { key: 'push', label: 'Push-уведомления', hint: 'В браузере и мобильном приложении' },
+  const connections = useSettings((s) => s.connections);
+  const [connectKey, setConnectKey] = useState<MessengerKey | null>(null);
+
+  // Каналы доставки — теперь с привязкой к connections и кнопкой подключения
+  const deliveryChannels: Array<{ key: keyof typeof notif; connKey: MessengerKey; label: string; hint: string; icon: typeof Bot; gradient: string }> = [
+    { key: 'email', connKey: 'email', label: 'Email-уведомления', hint: 'Через SMTP вашего почтового ящика', icon: MailOpen, gradient: 'from-warning to-gold' },
+    { key: 'sms', connKey: 'sms', label: 'SMS-уведомления', hint: 'Через SMS.ru / SMS Aero / Twilio', icon: Phone, gradient: 'from-error to-warning' },
+    { key: 'telegram', connKey: 'telegram', label: 'Telegram', hint: 'Через собственного бота', icon: Bot, gradient: 'from-info to-primary' },
+    { key: 'whatsapp' as keyof typeof notif, connKey: 'whatsapp', label: 'WhatsApp', hint: 'Через Green-API / Wazzup24', icon: MessagesSquare, gradient: 'from-success to-info' },
+    { key: 'max' as keyof typeof notif, connKey: 'max', label: 'MAX-мессенджер', hint: 'Российский мессенджер (VK)', icon: Bot, gradient: 'from-primary to-gold' },
+    { key: 'push', connKey: 'telegram', label: 'Push-уведомления', hint: 'В браузере и мобильном приложении', icon: Bell, gradient: 'from-primary to-info' },
+  ];
+
+  const eventItems: Array<{ key: keyof typeof notif; label: string; hint?: string }> = [
     { key: 'newBooking', label: 'Новые брони' },
     { key: 'cancellation', label: 'Отмены' },
     { key: 'dailyReport', label: 'Ежедневный отчёт' },
     { key: 'channelErrors', label: 'Ошибки каналов' },
     { key: 'aiInsights', label: 'AI-инсайты (еженедельно)' },
   ];
+
   return (
     <div className="space-y-4">
       <Card padding="md">
-        <CardHeader title="Каналы доставки" />
-        <div className="space-y-2">
-          {items.slice(0, 4).map((it) => (
-            <ToggleRow key={it.key} label={it.label} hint={it.hint} on={!!notif[it.key]} onChange={(v) => setNotif({ [it.key]: v })} />
-          ))}
+        <CardHeader title="Каналы доставки" subtitle="Подключите мессенджеры и почту, чтобы получать и отправлять уведомления гостям" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {deliveryChannels.map((ch) => {
+            const Icon = ch.icon;
+            const conn = connections[ch.connKey];
+            const isOn = !!notif[ch.key];
+            return (
+              <div key={ch.key} className="p-3 rounded-btn border border-border bg-surface flex items-start gap-3">
+                <div className={cn('h-10 w-10 rounded-btn bg-gradient-to-br flex items-center justify-center text-white shrink-0 shadow-soft', ch.gradient)}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold text-text">{ch.label}</p>
+                    {conn.connected
+                      ? <Badge tone="success" dot>Подключено</Badge>
+                      : <Badge tone="neutral" dot>Не подключено</Badge>}
+                  </div>
+                  <p className="text-xs text-text-muted mt-0.5">{ch.hint}</p>
+                  <div className="flex items-center justify-between gap-2 mt-2">
+                    <button
+                      type="button"
+                      className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                      onClick={() => setConnectKey(ch.connKey)}
+                    >
+                      <PlugZap className="h-3.5 w-3.5" />
+                      {conn.connected ? 'Настроить' : 'Подключить'}
+                    </button>
+                    <Switch
+                      size="sm"
+                      checked={isOn && conn.connected}
+                      onChange={(v) => {
+                        if (v && !conn.connected) { setConnectKey(ch.connKey); return; }
+                        setNotif({ [ch.key]: v });
+                      }}
+                      disabled={!conn.connected}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </Card>
       <Card padding="md">
         <CardHeader title="Типы событий" />
         <div className="space-y-2">
-          {items.slice(4).map((it) => (
+          {eventItems.map((it) => (
             <ToggleRow key={it.key} label={it.label} hint={it.hint} on={!!notif[it.key]} onChange={(v) => setNotif({ [it.key]: v })} />
           ))}
         </div>
       </Card>
-      <Card padding="md">
-        <CardHeader title="Telegram-бот" subtitle="Подключение к @GinoHotelBot" />
-        <div className="p-4 rounded-btn bg-info/10 border border-info/30 flex items-center gap-3 flex-wrap">
-          <div className="h-12 w-12 rounded-btn bg-gradient-to-br from-info to-primary flex items-center justify-center text-white shrink-0 shadow-soft">
-            <Bot className="h-6 w-6" />
-          </div>
-          <div className="flex-1 min-w-[200px]">
-            <p className="font-bold text-text">@GinoHotelBot</p>
-            <p className="text-xs text-text-muted">Отправьте боту ваш ID: <span className="font-mono font-bold">HQ-9847</span></p>
-          </div>
-          <Button>Подключить</Button>
-        </div>
-      </Card>
+      {connectKey && (
+        <ChannelConnectModal open={!!connectKey} channel={connectKey} onClose={() => setConnectKey(null)} />
+      )}
     </div>
   );
 }
@@ -227,17 +266,7 @@ function NotifTab() {
 function ToggleRow({ label, hint, on, onChange }: { label: string; hint?: string; on: boolean; onChange: (v: boolean) => void }) {
   return (
     <div className="flex items-center justify-between p-3 rounded-btn hover:bg-surface-2">
-      <div>
-        <p className="text-sm font-semibold text-text">{label}</p>
-        {hint && <p className="text-xs text-text-muted mt-0.5">{hint}</p>}
-      </div>
-      <button
-        type="button"
-        onClick={() => onChange(!on)}
-        className={cn('relative h-6 w-11 rounded-full transition-colors shrink-0', on ? 'bg-primary' : 'bg-border')}
-      >
-        <span className={cn('absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform', on ? 'translate-x-5' : 'translate-x-0.5')} />
-      </button>
+      <Switch label={label} hint={hint} checked={on} onChange={onChange} className="w-full" />
     </div>
   );
 }
@@ -459,10 +488,30 @@ function EmailTemplatesTab() {
 function AutoMessagesTab() {
   const messages = useSettings((s) => s.autoMessages);
   const update = useSettings((s) => s.updateAutoMessage);
-  const channelOptions = ['MAX', 'WhatsApp', 'Telegram', 'Email', 'SMS'] as const;
+  const connections = useSettings((s) => s.connections);
+  const [connectKey, setConnectKey] = useState<MessengerKey | null>(null);
+  // Маппинг ярлыка чипа на ключ подключения в connections
+  const channelOptions: Array<{ label: string; key: MessengerKey }> = [
+    { label: 'MAX', key: 'max' },
+    { label: 'WhatsApp', key: 'whatsapp' },
+    { label: 'Telegram', key: 'telegram' },
+    { label: 'Email', key: 'email' },
+    { label: 'SMS', key: 'sms' },
+  ];
 
   return (
     <div className="space-y-3">
+      <Card padding="md" className="bg-info/5 border-info/30">
+        <div className="flex items-start gap-3">
+          <PlugZap className="h-5 w-5 text-info shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-text">Перед тем как включать автосообщения — подключите хотя бы один канал</p>
+            <p className="text-xs text-text-muted mt-1">
+              Откройте раздел <b>«Уведомления»</b> или нажмите на «не подключенный» чип канала ниже — откроется пошаговый мастер.
+            </p>
+          </div>
+        </div>
+      </Card>
       {AUTO_MESSAGE_TEMPLATES.map((tpl) => {
         const m = messages[tpl.key] ?? { enabled: false, channels: [], text: tpl.defaultText };
         return (
@@ -472,21 +521,30 @@ function AutoMessagesTab() {
                 <h3 className="font-bold text-text">{tpl.label}</h3>
                 <p className="text-xs text-text-muted">{tpl.description}</p>
               </div>
-              <ToggleRow label={m.enabled ? 'Включено' : 'Выключено'} on={m.enabled} onChange={(v) => update(tpl.key, { enabled: v })} />
+              <Switch label={m.enabled ? 'Включено' : 'Выключено'} checked={m.enabled} onChange={(v) => update(tpl.key, { enabled: v })} />
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
               {channelOptions.map((ch) => {
-                const active = m.channels.includes(ch);
+                const active = m.channels.includes(ch.label);
+                const connected = connections[ch.key].connected;
                 return (
                   <button
-                    key={ch}
-                    onClick={() => update(tpl.key, { channels: active ? m.channels.filter((c) => c !== ch) : [...m.channels, ch] })}
+                    key={ch.label}
+                    type="button"
+                    onClick={() => {
+                      if (!connected) { setConnectKey(ch.key); return; }
+                      update(tpl.key, { channels: active ? m.channels.filter((c) => c !== ch.label) : [...m.channels, ch.label] });
+                    }}
+                    title={connected ? 'Переключить канал' : 'Подключите канал, чтобы использовать его'}
                     className={cn(
-                      'px-3 h-8 rounded-btn text-xs font-bold border transition-colors',
-                      active ? 'border-primary bg-primary text-white' : 'border-border text-text-muted hover:border-primary/40',
+                      'inline-flex items-center gap-1.5 px-3 h-8 rounded-btn text-xs font-bold border transition-colors',
+                      active && connected && 'border-primary bg-primary text-white',
+                      !active && connected && 'border-border text-text hover:border-primary/40',
+                      !connected && 'border-dashed border-border text-text-muted hover:border-primary/40 hover:text-primary',
                     )}
                   >
-                    {ch}
+                    {ch.label}
+                    {!connected && <PlugZap className="h-3 w-3" />}
                   </button>
                 );
               })}
@@ -500,6 +558,9 @@ function AutoMessagesTab() {
           </Card>
         );
       })}
+      {connectKey && (
+        <ChannelConnectModal open={!!connectKey} channel={connectKey} onClose={() => setConnectKey(null)} />
+      )}
     </div>
   );
 }

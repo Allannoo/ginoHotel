@@ -228,6 +228,8 @@ export interface NotificationPrefs {
   email: boolean;
   sms: boolean;
   telegram: boolean;
+  whatsapp: boolean;
+  max: boolean;
   push: boolean;
   newBooking: boolean;
   cancellation: boolean;
@@ -251,6 +253,40 @@ export interface BalanceState {
   history: BalanceEntry[];
 }
 
+// ---------- Подключения мессенджеров ----------
+// Информация о подключённых каналах рассылки. Не путать с channels (источники броней).
+export type MessengerKey = 'telegram' | 'whatsapp' | 'max' | 'email' | 'sms';
+
+export interface MessengerConnection {
+  connected: boolean;
+  connectedAt?: string;
+  // Telegram / MAX
+  botToken?: string;
+  botUsername?: string;
+  chatId?: string;
+  // WhatsApp
+  provider?: 'green-api' | 'wazzup' | 'twilio' | 'sms-ru' | 'sms-aero';
+  apiKey?: string;
+  instanceId?: string;
+  phoneNumber?: string;
+  // Email/SMTP
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  fromName?: string;
+}
+
+export type MessengerConnections = Record<MessengerKey, MessengerConnection>;
+
+const initialConnections: MessengerConnections = {
+  telegram: { connected: false },
+  whatsapp: { connected: false },
+  max: { connected: false },
+  email: { connected: false },
+  sms: { connected: false },
+};
+
 // ---------- Стор ----------
 interface SettingsState {
   notifications: NotificationPrefs;
@@ -260,6 +296,7 @@ interface SettingsState {
   emailTemplates: EmailTemplate[];
   autoMessages: Record<string, AutoMessageState>;
   webhooks: Webhook[];
+  connections: MessengerConnections;
 
   setNotifications: (patch: Partial<NotificationPrefs>) => void;
   setContacts: (patch: Partial<ContactsInfo>) => void;
@@ -270,6 +307,8 @@ interface SettingsState {
   toggleWebhook: (id: string) => void;
   removeWebhook: (id: string) => void;
   topUpBalance: (amount: number) => void;
+  connectMessenger: (key: MessengerKey, data: Partial<MessengerConnection>) => void;
+  disconnectMessenger: (key: MessengerKey) => void;
 }
 
 const initialAutoMessages: Record<string, AutoMessageState> = Object.fromEntries(
@@ -285,7 +324,7 @@ export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
       notifications: {
-        email: true, sms: false, telegram: true, push: true,
+        email: true, sms: false, telegram: true, whatsapp: false, max: false, push: true,
         newBooking: true, cancellation: true, dailyReport: false, channelErrors: true, aiInsights: true,
       },
       balance: {
@@ -314,6 +353,7 @@ export const useSettings = create<SettingsState>()(
         { id: 'w1', event: 'booking.created', url: 'https://api.example.com/webhook/created', enabled: true },
         { id: 'w2', event: 'booking.cancelled', url: 'https://api.example.com/webhook/cancelled', enabled: true },
       ],
+      connections: initialConnections,
 
       setNotifications: (patch) => set((s) => ({ notifications: { ...s.notifications, ...patch } })),
       setContacts: (patch) => set((s) => ({ contacts: { ...s.contacts, ...patch } })),
@@ -342,7 +382,13 @@ export const useSettings = create<SettingsState>()(
         };
         return { balance: { ...s.balance, amount: newAmount, history: [entry, ...s.balance.history] } };
       }),
+      connectMessenger: (key, data) => set((s) => ({
+        connections: { ...s.connections, [key]: { ...s.connections[key], ...data, connected: true, connectedAt: new Date().toISOString() } },
+      })),
+      disconnectMessenger: (key) => set((s) => ({
+        connections: { ...s.connections, [key]: { connected: false } },
+      })),
     }),
-    { name: 'ginohotel-settings', version: 1 },
+    { name: 'ginohotel-settings', version: 2 },
   ),
 );

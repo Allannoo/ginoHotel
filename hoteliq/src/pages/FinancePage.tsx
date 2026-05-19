@@ -1,11 +1,14 @@
 // Финансы и Аналитика: BarChart по каналам, сравнение, таблица + heatmap.
 // Поддерживается фильтр по объекту, фильтр по периоду (последний месяц / конкретный месяц / год / всё время)
-// и выгрузка CSV/PDF — по всем или одному объекту в выбранном периоде.
+// и выгрузка XLSX/PDF — по всем или одному объекту в выбранном периоде.
+// XLSX содержит 3 листа (Сводка, Транзакции, По каналам), нормальные ширины колонок,
+// формат даты/денег и закреплённую шапку.
 import { useMemo, useState } from 'react';
+import * as XLSX from 'xlsx';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts';
-import { Download, FileText, TrendingUp, TrendingDown } from 'lucide-react';
+import { FileSpreadsheet, FileText, TrendingUp, TrendingDown } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -16,6 +19,7 @@ import { bookings, properties } from '@/mock/data';
 import { fmtMoney, cn } from '@/utils/format';
 import { useToast } from '@/components/ui/Toast';
 import { MONTHS_NOM } from '@/utils/i18n';
+import { CHANNEL_LABEL } from '@/utils/i18n';
 
 type PeriodKind = 'last-month' | 'specific-month' | 'year' | 'all-time';
 
@@ -74,21 +78,112 @@ export default function FinancePage() {
     return Array.from({ length: days }).map(() => Math.random());
   }), [year]);
 
-  const handleExport = (kind: 'csv' | 'pdf') => {
-    if (kind === 'csv') {
-      const propName = propertyId === 'all' ? 'все объекты' : (properties.find((p) => p.id === propertyId)?.name ?? '');
-      const rows = filtered.map((b) => {
-        const p = properties.find((x) => x.id === b.propertyId);
-        return `${b.id},"${b.guestName}","${p?.name ?? ''}",${b.checkIn},${b.checkOut},${b.amount},${b.channel}`;
+  const handleExport = (kind: 'xlsx' | 'pdf') => {
+    if (kind === 'xlsx') {
+      const propName = propertyId === 'all' ? 'Все объекты' : (properties.find((p) => p.id === propertyId)?.name ?? '');
+      const wb = XLSX.utils.book_new();
+
+      // ===== Лист 1: Сводка =====
+      const summaryRows: (string | number)[][] = [
+        ['Финансовый отчёт GinoHotel'],
+        [],
+        ['Объект', propName],
+        ['Период', periodLabel],
+        ['Дата формирования', new Date().toLocaleString('ru-RU')],
+        ['Количество броней', filtered.length],
+        [],
+        ['Выручка за период', total],
+        ['Средний чек', filtered.length ? Math.round(total / filtered.length) : 0],
+        ['Прошлый период (план)', totalPrev],
+        ['Динамика, %', Number(growth.toFixed(2))],
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+      wsSummary['!cols'] = [{ wch: 28 }, { wch: 32 }];
+      wsSummary['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
+      // Денежные ячейки
+      ['B8', 'B9', 'B10'].forEach((addr) => {
+        if (wsSummary[addr]) wsSummary[addr].z = '# ##0 ₽';
       });
-      const csv = [`# Объект: ${propName} · Период: ${periodLabel}`, 'id,guest,property,check_in,check_out,amount,channel', ...rows].join('\n');
-      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url;
-      a.download = `ginohotel-${propertyId}-${periodKind}-${Date.now()}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      push({ tone: 'success', title: 'CSV экспортирован', description: `${filtered.length} записей` });
+      if (wsSummary['B11']) wsSummary['B11'].z = '0.00 %';
+      // Заголовок жирным (XLSX cell styling требует cellStyles, но базовый header достаточен)
+      if (wsSummary['A1']) wsSummary['A1'].s = { font: { bold: true, sz: 14 } };
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'Сводка');
+
+      // ===== Лист 2: Транзакции =====
+      const txHeader = ['№', 'ID брони', 'Гость', 'Объект', 'Номер', 'Канал', 'Заезд', 'Выезд', 'Ночей', 'Гостей', 'Сумма, ₽', 'Статус'];
+      const txBody = filtered.map((b, i) => {
+        const p = properties.find((x) => x.id === b.propertyId);
+        const nights = Math.max(1, Math.round((+new Date(b.checkOut) - +new Date(b.checkIn)) / 86400000));
+        return [
+          i + 1,
+          b.id,
+          b.guestName,
+          p?.name ?? '',
+          b.roomId,
+          (CHANNEL_LABEL[b.channel] ?? b.channel),
+          new Date(b.checkIn),
+          new Date(b.checkOut),
+          nights,
+          b.guests,
+          b.amount,
+          b.status,
+        ];
+      });
+      // Строка итогов
+      const totalAmount = filtered.reduce((s, b) => s + b.amount, 0);
+      const totalGuests = filtered.reduce((s, b) => s + b.guests, 0);
+      const footer = ['', '', '', '', '', '', '', 'ИТОГО:', '', totalGuests, totalAmount, ''];
+      const wsTx = XLSX.utils.aoa_to_sheet([txHeader, ...txBody, footer]);
+      wsTx['!cols'] = [
+        { wch: 5 }, { wch: 12 }, { wch: 26 }, { wch: 22 }, { wch: 10 },
+        { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 8 },
+        { wch: 14 }, { wch: 12 },
+      ];
+      wsTx['!autofilter'] = { ref: `A1:L${txBody.length + 1}` };
+      wsTx['!freeze'] = { ySplit: 1 };
+      // Форматы колонок: даты и деньги
+      for (let r = 2; r <= txBody.length + 1; r++) {
+        const cIn = XLSX.utils.encode_cell({ r: r - 1, c: 6 });
+        const cOut = XLSX.utils.encode_cell({ r: r - 1, c: 7 });
+        const cAmt = XLSX.utils.encode_cell({ r: r - 1, c: 10 });
+        if (wsTx[cIn]) wsTx[cIn].z = 'dd.mm.yyyy';
+        if (wsTx[cOut]) wsTx[cOut].z = 'dd.mm.yyyy';
+        if (wsTx[cAmt]) wsTx[cAmt].z = '# ##0 ₽';
+      }
+      // Сумма итогов в формате денег
+      const footerAmt = XLSX.utils.encode_cell({ r: txBody.length + 1, c: 10 });
+      if (wsTx[footerAmt]) wsTx[footerAmt].z = '# ##0 ₽';
+      XLSX.utils.book_append_sheet(wb, wsTx, 'Транзакции');
+
+      // ===== Лист 3: По каналам =====
+      const chHeader = ['Канал', 'Выручка, ₽', 'Прошлый период, ₽', 'Динамика, %', 'Доля, %'];
+      const chBody = byChannel.map((c) => [
+        c.name,
+        c.revenue,
+        c.prev,
+        c.prev > 0 ? Number((((c.revenue - c.prev) / c.prev) * 100).toFixed(2)) : 0,
+        total > 0 ? Number(((c.revenue / total) * 100).toFixed(2)) : 0,
+      ]);
+      const wsCh = XLSX.utils.aoa_to_sheet([chHeader, ...chBody, ['ИТОГО', total, totalPrev, '', 100]]);
+      wsCh['!cols'] = [{ wch: 22 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 10 }];
+      wsCh['!autofilter'] = { ref: `A1:E${chBody.length + 1}` };
+      wsCh['!freeze'] = { ySplit: 1 };
+      for (let r = 2; r <= chBody.length + 2; r++) {
+        const b = XLSX.utils.encode_cell({ r: r - 1, c: 1 });
+        const c = XLSX.utils.encode_cell({ r: r - 1, c: 2 });
+        const d = XLSX.utils.encode_cell({ r: r - 1, c: 3 });
+        const e = XLSX.utils.encode_cell({ r: r - 1, c: 4 });
+        if (wsCh[b]) wsCh[b].z = '# ##0 ₽';
+        if (wsCh[c]) wsCh[c].z = '# ##0 ₽';
+        if (wsCh[d]) wsCh[d].z = '0.00 %';
+        if (wsCh[e]) wsCh[e].z = '0.00 %';
+      }
+      XLSX.utils.book_append_sheet(wb, wsCh, 'По каналам');
+
+      const safePeriod = periodLabel.replace(/[^\wа-яА-Я0-9-]+/g, '_');
+      const fname = `GinoHotel_${propertyId === 'all' ? 'все' : propertyId}_${safePeriod}.xlsx`;
+      XLSX.writeFile(wb, fname);
+      push({ tone: 'success', title: 'XLSX экспортирован', description: `${filtered.length} записей · 3 листа` });
     } else {
       push({ tone: 'info', title: 'PDF-отчёт', description: 'Генерация запущена, придёт на email' });
     }
@@ -149,7 +244,7 @@ export default function FinancePage() {
             />
           )}
           <div className="flex gap-2 md:col-start-4 md:justify-end">
-            <Button variant="outline" leftIcon={<Download className="h-4 w-4" />} onClick={() => handleExport('csv')}>CSV</Button>
+            <Button variant="outline" leftIcon={<FileSpreadsheet className="h-4 w-4" />} onClick={() => handleExport('xlsx')}>XLSX</Button>
             <Button leftIcon={<FileText className="h-4 w-4" />} onClick={() => handleExport('pdf')}>PDF</Button>
           </div>
         </div>
