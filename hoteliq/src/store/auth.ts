@@ -67,17 +67,28 @@ export const useAuth = create<AuthState>()(
       login: (email, password, name) => {
         const existing = get().team.find((u) => u.email.toLowerCase() === email.toLowerCase());
         if (existing) {
-          set({ currentUserId: existing.id });
+          // Бэкфилл: у директора ownerId должен указывать на самого себя,
+          // чтобы фильтрация команды по владельцу работала для старых аккаунтов.
+          if (existing.role === 'admin' && !existing.ownerId) {
+            set((s) => ({
+              team: s.team.map((u) => (u.id === existing.id ? { ...u, ownerId: existing.id } : u)),
+              currentUserId: existing.id,
+            }));
+          } else {
+            set({ currentUserId: existing.id });
+          }
           return existing;
         }
         // Если пользователя нет — создаём как директора (первый вход)
+        const id = newId();
         const created: User = {
-          id: newId(),
+          id,
           name: name || email.split('@')[0],
           email,
           role: 'admin',
           active: true,
           password,
+          ownerId: id, // директор — владелец самого себя
           permissions: [...ALL_PERMISSIONS],
           createdAt: new Date().toISOString(),
         };
@@ -86,13 +97,15 @@ export const useAuth = create<AuthState>()(
       },
 
       register: ({ name, email, password }) => {
+        const id = newId();
         const created: User = {
-          id: newId(),
+          id,
           name,
           email,
           role: 'admin',
           active: true,
           password,
+          ownerId: id, // директор — владелец самого себя
           permissions: [...ALL_PERMISSIONS],
           createdAt: new Date().toISOString(),
         };
@@ -153,6 +166,20 @@ export const useImpersonation = create<ImpersonationState>((set) => ({
   role: null,
   setRole: (role) => set({ role }),
 }));
+
+// Хелпер: список ID пользователей, принадлежащих текущему аккаунту-директору.
+// Каждый зарегистрированный директор владеет самим собой (ownerId === id) и сотрудниками,
+// которых он добавил. Это изолирует команды разных аккаунтов в общем persist-хранилище.
+export function useOwnedTeam(): User[] {
+  return useAuth((s) => {
+    const current = s.team.find((u) => u.id === s.currentUserId);
+    if (!current) return [];
+    // Корень владения: для директора — он сам; для подчинённого — его директор
+    const ownerId = current.role === 'admin' ? current.id : current.ownerId;
+    if (!ownerId) return [current];
+    return s.team.filter((u) => u.id === ownerId || u.ownerId === ownerId);
+  });
+}
 
 // Хелпер: текущий пользователь (с учётом просмотра от лица другой роли)
 export function useCurrentUser(): User | null {

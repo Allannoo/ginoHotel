@@ -9,7 +9,7 @@ import { Card, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { TeamManager } from '@/components/TeamManager';
-import { useAuth, ROLE_LABEL } from '@/store/auth';
+import { useOwnedTeam, ROLE_LABEL } from '@/store/auth';
 import { cn } from '@/utils/format';
 
 // Детерминированный KPI-мок (на каждого сотрудника свои стабильные цифры)
@@ -43,7 +43,7 @@ function kpiFor(id: string, role: string): MemberKpi {
 }
 
 export default function TeamPage() {
-  const team = useAuth((s) => s.team);
+  const team = useOwnedTeam();
   const active = useMemo(() => team.filter((m) => m.active), [team]);
   const stats = useMemo(() => active.map((m) => ({ member: m, kpi: kpiFor(m.id, m.role) })), [active]);
 

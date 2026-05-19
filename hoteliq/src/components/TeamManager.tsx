@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
-  useAuth, useCurrentUser, PERMISSION_LABEL, ROLE_LABEL,
+  useAuth, useCurrentUser, useOwnedTeam, PERMISSION_LABEL, ROLE_LABEL,
   DEFAULT_ROLE_PERMISSIONS, ALL_PERMISSIONS,
 } from '@/store/auth';
 import { useToast } from '@/components/ui/Toast';
@@ -19,7 +19,7 @@ import type { PermissionKey, UserRole, User } from '@/types';
 
 export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
   const current = useCurrentUser();
-  const team = useAuth((s) => s.team);
+  const team = useOwnedTeam();
   const addMember = useAuth((s) => s.addMember);
   const removeMember = useAuth((s) => s.removeMember);
   const togglePermission = useAuth((s) => s.togglePermission);

@@ -1,5 +1,6 @@
 // Страница «Дашборд» — главная
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -83,11 +84,13 @@ function ChartTooltip({ active, payload, label }: any) {
 
 export default function DashboardPage() {
   const user = useCurrentUser();
+  const navigate = useNavigate();
   const role = user?.role ?? 'admin';
   const isReception = role === 'reception';
   const isAdmin = role === 'admin';
   const isManager = role === 'manager';
   const [drillKey, setDrillKey] = useState<null | 'revenue' | 'occupancy' | 'adr' | 'revpar' | 'bookings' | 'guests' | 'checkin' | 'checkout' | 'free' | 'tasks' | 'margin'>(null);
+  const [todayOpen, setTodayOpen] = useState(false);
 
   // Метрики для ресепшен — вычисляем из mock
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -116,12 +119,12 @@ export default function DashboardPage() {
   return (
     <PageTransition>
       <PageHeader
-        title={`Доброе утро, ${greetName}!`}
+        title={`Здравствуйте, ${greetName}!`}
         subtitle={greetSubtitle}
         action={
           <>
-            <Button variant="outline" size="md">Сегодня</Button>
-            <Button size="md" leftIcon={<TrendingUp className="h-4 w-4" />}>Отчёт</Button>
+            <Button variant="outline" size="md" onClick={() => setTodayOpen(true)}>Сегодня</Button>
+            <Button size="md" leftIcon={<TrendingUp className="h-4 w-4" />} onClick={() => navigate('/reports')}>Отчёт</Button>
           </>
         }
       />
@@ -296,6 +299,46 @@ export default function DashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* Сводка «Сегодня» — быстрый снимок ключевых показателей дня */}
+      <Modal
+        open={todayOpen}
+        onClose={() => setTodayOpen(false)}
+        title={`Сводка за сегодня · ${new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`}
+        subtitle="Оперативные показатели на текущий день"
+        size="md"
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 rounded-btn bg-surface-2">
+            <p className="text-[11px] uppercase font-bold text-text-muted">Заезды</p>
+            <p className="font-display text-2xl text-text mt-1">{checkInToday}</p>
+          </div>
+          <div className="p-3 rounded-btn bg-surface-2">
+            <p className="text-[11px] uppercase font-bold text-text-muted">Выезды</p>
+            <p className="font-display text-2xl text-text mt-1">{checkOutToday}</p>
+          </div>
+          <div className="p-3 rounded-btn bg-surface-2">
+            <p className="text-[11px] uppercase font-bold text-text-muted">Свободно номеров</p>
+            <p className="font-display text-2xl text-text mt-1">{freeRooms}</p>
+          </div>
+          <div className="p-3 rounded-btn bg-surface-2">
+            <p className="text-[11px] uppercase font-bold text-text-muted">К уборке</p>
+            <p className="font-display text-2xl text-text mt-1">{pendingHousekeeping}</p>
+          </div>
+          <div className="p-3 rounded-btn bg-surface-2">
+            <p className="text-[11px] uppercase font-bold text-text-muted">Выручка</p>
+            <p className="font-display text-xl text-text mt-1">{fmtMoney(kpiToday.revenueToday)}</p>
+          </div>
+          <div className="p-3 rounded-btn bg-surface-2">
+            <p className="text-[11px] uppercase font-bold text-text-muted">Загрузка</p>
+            <p className="font-display text-2xl text-text mt-1">{kpiToday.occupancy}%</p>
+          </div>
+        </div>
+        <div className="flex gap-2 mt-4">
+          <Button variant="outline" className="flex-1" onClick={() => { setTodayOpen(false); navigate('/grid'); }}>Открыть календарь</Button>
+          <Button className="flex-1" onClick={() => { setTodayOpen(false); navigate('/reports'); }}>Полный отчёт</Button>
+        </div>
+      </Modal>
 
       {/* Drill-down модалка: разбивка KPI по дням и каналам */}
       <Modal
