@@ -153,7 +153,12 @@ export type PermissionKey =
   | 'finance'
   | 'tasks'
   | 'settings'
-  | 'team';
+  | 'team'
+  | 'pricing'
+  | 'expenses'
+  | 'roomservice'
+  | 'locks'
+  | 'mvd';
 
 export interface User {
   id: string;
@@ -166,4 +171,246 @@ export interface User {
   ownerId?: string; // кто добавил пользователя
   permissions: PermissionKey[];
   createdAt?: string;
+}
+
+// ============================================================
+// Конфликты и overbooking (Channel Manager 2.0)
+// ============================================================
+export type ConflictResolution =
+  | 'upgrade'         // апгрейд гостя в более дорогой свободный номер
+  | 'relocate-room'   // перевод в другой свободный номер той же категории
+  | 'relocate-partner'// передача в партнёрский отель
+  | 'compensate-cancel' // отмена с возвратом + компенсацией
+  | 'manual';         // ручное решение
+
+export interface BookingConflict {
+  id: string;
+  type: 'overbooking' | 'rate-mismatch' | 'channel-error';
+  roomId: string;
+  propertyId: string;
+  bookingIds: string[]; // как правило 2
+  detectedAt: string;
+  severity: 'low' | 'medium' | 'high';
+  description: string;
+  resolved: boolean;
+  resolution?: ConflictResolution;
+  resolutionNote?: string;
+  resolvedAt?: string;
+}
+
+// ============================================================
+// OPEX / Расходы
+// ============================================================
+export type ExpenseCategory =
+  | 'salary'        // ФОТ
+  | 'utilities'     // коммуналка
+  | 'laundry'       // прачечная
+  | 'cleaning'      // уборка / расходники
+  | 'maintenance'   // ремонт
+  | 'supplies'      // расходники гостям
+  | 'marketing'     // реклама
+  | 'taxes'         // налоги, сборы
+  | 'insurance'     // страховка
+  | 'rent'          // аренда
+  | 'food'          // продукты для завтраков
+  | 'commission'    // комиссии каналов
+  | 'depreciation'  // амортизация
+  | 'other';
+
+export interface Expense {
+  id: string;
+  date: string;          // ISO дата
+  category: ExpenseCategory;
+  description: string;
+  amount: number;        // ₽
+  propertyId: string | 'shared'; // shared = распределить по всем по доле выручки
+  attachmentName?: string; // имя прикреплённого чека/файла
+  attachmentDataUrl?: string; // мок-данные файла
+  vendor?: string;       // подрядчик
+  createdBy?: string;    // userId
+  createdAt: string;
+}
+
+// ============================================================
+// Room Service / Доставка еды
+// ============================================================
+export type CuisineType =
+  | 'Осетинская'
+  | 'Кавказская'
+  | 'Грузинская'
+  | 'Европейская'
+  | 'Японская'
+  | 'Итальянская'
+  | 'Фастфуд'
+  | 'Десерты';
+
+export interface RestaurantMenuItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  category: 'starter' | 'main' | 'soup' | 'dessert' | 'drink' | 'pie'; // pie — осетинский пирог
+  emoji?: string;
+}
+
+export interface Restaurant {
+  id: string;
+  name: string;
+  city: string;            // обычно Владикавказ
+  cuisine: CuisineType[];
+  rating: number;          // 0..5
+  reviewsCount: number;
+  deliveryFee: number;     // ₽
+  deliveryMinutes: number; // средний срок
+  minOrder: number;        // ₽
+  workingHours: string;    // "10:00–23:00"
+  phone: string;
+  address: string;
+  cover: string;           // emoji/icon-key
+  verified: boolean;       // проверен Gino-командой
+  description: string;
+  menu: RestaurantMenuItem[];
+}
+
+export type RoomOrderStatus =
+  | 'new'         // создан гостем
+  | 'accepted'    // принят рестораном
+  | 'cooking'     // готовится
+  | 'delivering'  // в пути
+  | 'delivered'   // доставлен в номер
+  | 'completed'   // оплачен / закрыт
+  | 'cancelled';
+
+export interface RoomOrderItem {
+  menuItemId: string;
+  name: string;
+  price: number;
+  qty: number;
+}
+
+export interface RoomOrder {
+  id: string;
+  bookingId: string;
+  guestName: string;
+  roomNumber: string;
+  propertyId: string;
+  restaurantId: string;
+  restaurantName: string;
+  items: RoomOrderItem[];
+  subtotal: number;
+  deliveryFee: number;
+  hotelCommission: number; // 10% от subtotal
+  total: number;           // subtotal + delivery (commission удерживает Gino)
+  status: RoomOrderStatus;
+  createdAt: string;
+  deliveredAt?: string;
+  note?: string;
+  paymentMethod: 'to-bill' | 'card' | 'cash';
+}
+
+// ============================================================
+// Электронные замки
+// ============================================================
+export type LockProvider = 'TTLock' | 'Igloohome' | 'Salto' | 'YGG' | 'Hikvision';
+export type LockStatus = 'online' | 'offline' | 'low-battery' | 'tamper';
+
+export interface SmartLock {
+  id: string;
+  roomId: string;
+  propertyId: string;
+  provider: LockProvider;
+  serialNumber: string;
+  status: LockStatus;
+  batteryLevel: number;       // %
+  firmwareVersion: string;
+  lastSeen: string;
+  installedAt: string;
+}
+
+export type VirtualKeyStatus = 'scheduled' | 'active' | 'used' | 'expired' | 'revoked';
+
+export interface VirtualKey {
+  id: string;
+  lockId: string;
+  bookingId: string;
+  guestName: string;
+  pinCode: string;            // 6 цифр
+  validFrom: string;
+  validTo: string;
+  status: VirtualKeyStatus;
+  sentVia: ('sms' | 'email' | 'telegram' | 'whatsapp' | 'push')[];
+  sentAt?: string;
+  usedAt?: string;
+  createdAt: string;
+}
+
+export interface LockEvent {
+  id: string;
+  lockId: string;
+  time: string;
+  type: 'unlock' | 'lock' | 'denied' | 'low-battery' | 'tamper' | 'manual-open';
+  source: 'pin' | 'app' | 'card' | 'physical-key' | 'system';
+  actor?: string; // имя гостя/сотрудника
+}
+
+// ============================================================
+// RMS (Revenue Management System)
+// ============================================================
+export interface PricingRule {
+  id: string;
+  propertyId: string | 'all';
+  name: string;
+  condition: 'occupancy-above' | 'occupancy-below' | 'days-ahead' | 'weekend' | 'event' | 'season';
+  threshold: number; // % или дни
+  action: 'increase' | 'decrease' | 'set-fixed';
+  amount: number; // % или ₽
+  enabled: boolean;
+  priority: number;
+}
+
+export interface PricingForecast {
+  date: string;        // ISO
+  propertyId: string;
+  forecastOccupancy: number; // %
+  currentPrice: number;      // ₽
+  recommendedPrice: number;  // ₽
+  competitorAvg: number;     // ₽
+  demandIndex: number;       // 0..100
+}
+
+export interface PaceEntry {
+  date: string;            // дата заезда
+  bookingsOnBook: number;  // сколько броней сейчас
+  prevYearOnBook: number;  // на эту же дату год назад
+  finalLastYear: number;   // финальное число прошлого года
+}
+
+// ============================================================
+// eFMS / отчётность в МВД для иностранцев
+// ============================================================
+export type MvdReportStatus = 'draft' | 'submitted' | 'accepted' | 'rejected';
+export type MvdFormType = 'arrival' | 'departure'; // форма прибытия / убытия
+
+export interface MvdReport {
+  id: string;
+  guestId: string;
+  guestFullName: string;
+  bookingId: string;
+  propertyId: string;
+  formType: MvdFormType;
+  arrivalDate: string;
+  departureDate: string;
+  citizenship: string;
+  passportSeries?: string;
+  passportNumber: string;
+  visaNumber?: string;
+  migrationCardNumber?: string;
+  registrationAddress: string;
+  status: MvdReportStatus;
+  deadline: string; // 24 часа от заезда
+  submittedAt?: string;
+  acceptedAt?: string;
+  rejectionReason?: string;
+  externalId?: string; // ID на госуслугах
+  createdAt: string;
 }

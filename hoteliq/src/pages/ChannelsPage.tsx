@@ -1,7 +1,7 @@
 // Менеджер каналов: подключения, синхронизация, лог
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, AlertCircle, Plug, RefreshCcw, Settings as Cog, Compass, MapPin, Home, Theater, Hash, Tag } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Plug, RefreshCcw, Settings as Cog, Compass, MapPin, Home, Theater, Hash, Tag, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { PageTransition, StaggerList, staggerItem } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader } from '@/components/ui/Card';
@@ -9,10 +9,21 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
-import { channels as initial, syncLog, properties } from '@/mock/data';
-import type { ChannelConnection } from '@/types';
+import { channels as initial, syncLog, properties, rooms as allRooms } from '@/mock/data';
+import type { ChannelConnection, BookingConflict, ConflictResolution } from '@/types';
 import { useToast } from '@/components/ui/Toast';
-import { cn } from '@/utils/format';
+import { cn, fmtDate } from '@/utils/format';
+import { useBookings } from '@/store/bookings';
+import { detectOverbookings } from '@/utils/overbooking';
+import { ConflictResolutionModal } from '@/components/ConflictResolutionModal';
+
+const RESOLUTION_LABEL: Record<ConflictResolution, string> = {
+  upgrade: 'Апгрейд гостя',
+  'relocate-room': 'Перевод в другой номер',
+  'relocate-partner': 'Партнёрский отель',
+  'compensate-cancel': 'Отмена с возвратом',
+  manual: 'Ручное решение',
+};
 
 const CHANNEL_VISUAL: Record<string, { Icon: typeof Compass; gradient: string }> = {
   ostrovok:   { Icon: Compass,  gradient: 'from-info to-primary' },
@@ -27,6 +38,17 @@ export default function ChannelsPage() {
   const [channels, setChannels] = useState(initial);
   const [connectFor, setConnectFor] = useState<ChannelConnection | null>(null);
   const { push } = useToast();
+  const bookings = useBookings((s) => s.bookings);
+
+  // Детектор overbooking: пробегаем по всем активным броням и ищем пересечения по номеру
+  const detectedConflicts = useMemo<BookingConflict[]>(() => detectOverbookings(bookings), [bookings]);
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => new Set());
+  const [resolutionLog, setResolutionLog] = useState<{ id: string; resolution: ConflictResolution; note: string; at: string }[]>([]);
+  const openConflicts = useMemo(
+    () => detectedConflicts.filter((c) => !resolvedIds.has(c.id)),
+    [detectedConflicts, resolvedIds]
+  );
+  const [activeConflict, setActiveConflict] = useState<BookingConflict | null>(null);
 
   const handleConnect = (ch: ChannelConnection) => {
     setChannels((arr) => arr.map((c) => c.id === ch.id ? { ...c, connected: true, hasError: false, lastSync: 'только что' } : c));
@@ -106,6 +128,95 @@ export default function ChannelsPage() {
           );
         })}
       </StaggerList>
+
+      {/* === Channel Manager 2.0: конфликты бронирований === */}
+      <Card padding="md" className="mb-6">
+        <CardHeader
+          title={
+            <span className="inline-flex items-center gap-2">
+              Конфликты бронирований
+              {openConflicts.length > 0 ? (
+                <Badge tone="error">{openConflicts.length}</Badge>
+              ) : (
+                <Badge tone="success">Нет</Badge>
+              )}
+            </span>
+          }
+          subtitle="2-way sync через webhooks. Детектор overbooking запускается каждый раз при получении новой брони от канала."
+          action={
+            <div className="hidden sm:flex items-center gap-2 text-xs text-text-muted">
+              <ShieldCheck className="h-4 w-4 text-success" />
+              Webhook-эндпоинт: <span className="font-mono">/api/v1/channel/webhook</span>
+            </div>
+          }
+        />
+
+        {openConflicts.length === 0 ? (
+          <div className="rounded-card border border-dashed border-border bg-surface-2/50 p-6 text-center">
+            <CheckCircle2 className="h-8 w-8 text-success mx-auto mb-2" />
+            <p className="text-sm font-bold text-text">Конфликтов не обнаружено</p>
+            <p className="text-xs text-text-muted mt-1">Все брони согласованы между каналами.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {openConflicts.map((c) => {
+              const room = allRooms.find((r) => r.id === c.roomId);
+              const conflictBookings = bookings.filter((b) => c.bookingIds.includes(b.id));
+              return (
+                <div key={c.id} className="rounded-card border border-error/40 bg-error/5 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <span className="h-10 w-10 rounded-btn bg-error/15 text-error flex items-center justify-center shrink-0">
+                    <AlertTriangle className="h-5 w-5" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-text">
+                      Номер № {room?.number ?? '—'} ({room?.category}) — двойная бронь
+                    </p>
+                    <p className="text-[12px] text-text-muted">
+                      {conflictBookings.map((b) => (
+                        <span key={b.id} className="mr-2">
+                          <span className="font-bold text-text">{b.guestName}</span> ({b.channel}, {fmtDate(b.checkIn)} → {fmtDate(b.checkOut)})
+                        </span>
+                      ))}
+                    </p>
+                  </div>
+                  <Badge tone={c.severity === 'high' ? 'error' : 'warning'}>{c.severity === 'high' ? 'Высокий' : 'Средний'}</Badge>
+                  <Button size="sm" onClick={() => setActiveConflict(c)}>Разрешить</Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {resolutionLog.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-border">
+            <p className="text-[11px] uppercase font-bold text-text-muted mb-2">Журнал разрешений</p>
+            <div className="space-y-1.5">
+              {resolutionLog.slice(0, 5).map((r) => (
+                <div key={r.id + r.at} className="flex items-center gap-2 text-xs text-text-muted">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  <span className="font-mono">{r.at}</span>
+                  <span>·</span>
+                  <Badge tone="primary">{RESOLUTION_LABEL[r.resolution]}</Badge>
+                  {r.note && <span className="truncate">— {r.note}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      <ConflictResolutionModal
+        open={!!activeConflict}
+        conflict={activeConflict}
+        onClose={() => setActiveConflict(null)}
+        onResolved={(id, resolution, note) => {
+          setResolvedIds((prev) => new Set([...prev, id]));
+          setResolutionLog((prev) => [
+            { id, resolution, note, at: new Date().toLocaleTimeString('ru-RU').slice(0, 5) },
+            ...prev,
+          ]);
+        }}
+      />
 
       {/* Лог синхронизации */}
       <Card padding="md">

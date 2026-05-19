@@ -18,6 +18,11 @@ const FinancePage = lazy(() => import('@/pages/FinancePage'));
 const TasksPage = lazy(() => import('@/pages/TasksPage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const TeamPage = lazy(() => import('@/pages/TeamPage'));
+const PricingPage = lazy(() => import('@/pages/PricingPage'));
+const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'));
+const RoomServicePage = lazy(() => import('@/pages/RoomServicePage'));
+const LocksPage = lazy(() => import('@/pages/LocksPage'));
+const MvdPage = lazy(() => import('@/pages/MvdPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 // Каркас экрана при ленивой подгрузке страницы:
@@ -128,6 +133,11 @@ export default function App() {
             <Route path="/tasks" element={<Protected perm="tasks"><Suspense fallback={<PageLoader />}><TasksPage /></Suspense></Protected>} />
             <Route path="/settings" element={<Protected perm="settings"><Suspense fallback={<PageLoader />}><SettingsPage /></Suspense></Protected>} />
             <Route path="/team" element={<Protected perm="team"><Suspense fallback={<PageLoader />}><TeamPage /></Suspense></Protected>} />
+            <Route path="/pricing" element={<Protected perm="pricing"><Suspense fallback={<PageLoader />}><PricingPage /></Suspense></Protected>} />
+            <Route path="/expenses" element={<Protected perm="expenses"><Suspense fallback={<PageLoader />}><ExpensesPage /></Suspense></Protected>} />
+            <Route path="/roomservice" element={<Protected perm="roomservice"><Suspense fallback={<PageLoader />}><RoomServicePage /></Suspense></Protected>} />
+            <Route path="/locks" element={<Protected perm="locks"><Suspense fallback={<PageLoader />}><LocksPage /></Suspense></Protected>} />
+            <Route path="/mvd" element={<Protected perm="mvd"><Suspense fallback={<PageLoader />}><MvdPage /></Suspense></Protected>} />
             <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFoundPage /></Suspense>} />
           </Route>
         ) : (
