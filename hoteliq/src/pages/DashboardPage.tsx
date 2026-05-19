@@ -43,8 +43,8 @@ function KpiCard({
     info: 'bg-info/10 text-info',
   }[tone];
   return (
-    <motion.div variants={staggerItem}>
-      <Card hoverable onClick={onClick}>
+    <motion.div variants={staggerItem} className="h-full">
+      <Card hoverable onClick={onClick} className="h-full flex flex-col">
         <div className="flex items-start justify-between mb-3">
           <div className={cn('h-10 w-10 rounded-btn flex items-center justify-center', toneBg)}>
             {icon}
@@ -55,10 +55,12 @@ function KpiCard({
           </Badge>
         </div>
         <p className="text-xs text-text-muted font-semibold uppercase tracking-wide">{label}</p>
-        <p className="font-display text-3xl text-text mt-1">
+        <p className="font-display text-2xl sm:text-3xl text-text mt-1 break-words">
           <CountUp value={value} format={format} />
         </p>
-        {onClick && <p className="text-[10px] text-primary mt-2 font-semibold">Подробнее →</p>}
+        <p className={cn('text-[10px] mt-2 font-semibold', onClick ? 'text-primary' : 'invisible')}>
+          Подробнее →
+        </p>
       </Card>
     </motion.div>
   );
@@ -126,23 +128,23 @@ export default function DashboardPage() {
 
       {/* KPI — зависит от роли */}
       {isReception ? (
-        <StaggerList className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <KpiCard icon={<LogIn className="h-5 w-5" />} label="Заезды сегодня" value={checkInToday} format="number" delta={0} tone="primary" onClick={() => setDrillKey('checkin')} />
           <KpiCard icon={<LogOut className="h-5 w-5" />} label="Выезды сегодня" value={checkOutToday} format="number" delta={0} tone="info" onClick={() => setDrillKey('checkout')} />
           <KpiCard icon={<KeyRound className="h-5 w-5" />} label="Свободно номеров" value={freeRooms} format="number" delta={0} tone="success" onClick={() => setDrillKey('free')} />
           <KpiCard icon={<Sparkle className="h-5 w-5" />} label="К уборке" value={pendingHousekeeping} format="number" delta={0} tone="gold" onClick={() => setDrillKey('tasks')} />
         </StaggerList>
       ) : isAdmin ? (
-        <StaggerList className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           <KpiCard icon={<Wallet className="h-5 w-5" />} label="Выручка сегодня" value={kpiToday.revenueToday} format="compact-money" delta={12} tone="success" onClick={() => setDrillKey('revenue')} />
           <KpiCard icon={<PiggyBank className="h-5 w-5" />} label="Маржа" value={margin} format="percent" delta={2} tone="gold" onClick={() => setDrillKey('margin')} />
           <KpiCard icon={<Activity className="h-5 w-5" />} label="Загрузка" value={kpiToday.occupancy} format="percent" delta={4} tone="primary" onClick={() => setDrillKey('occupancy')} />
           <KpiCard icon={<BedDouble className="h-5 w-5" />} label="ADR" value={kpiToday.adr} format="money" delta={3} tone="gold" onClick={() => setDrillKey('adr')} />
           <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="RevPAR" value={kpiToday.revpar} format="money" delta={-2} tone="info" onClick={() => setDrillKey('revpar')} />
-          <KpiCard icon={<Percent className="h-5 w-5" />} label="Выручка / мес." value={monthRevenue} format="compact-money" delta={9} tone="success" />
+          <KpiCard icon={<Percent className="h-5 w-5" />} label="Выручка / мес." value={monthRevenue} format="compact-money" delta={9} tone="success" onClick={() => setDrillKey('revenue')} />
         </StaggerList>
       ) : isManager ? (
-        <StaggerList className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           <KpiCard icon={<Activity className="h-5 w-5" />} label="Загрузка" value={kpiToday.occupancy} format="percent" delta={4} tone="primary" onClick={() => setDrillKey('occupancy')} />
           <KpiCard icon={<CalendarCheck className="h-5 w-5" />} label="Активные брони" value={kpiToday.activeBookings} format="number" delta={8} tone="primary" onClick={() => setDrillKey('bookings')} />
           <KpiCard icon={<Users className="h-5 w-5" />} label="Гости сегодня" value={kpiToday.guestsToday} format="number" delta={5} tone="success" onClick={() => setDrillKey('guests')} />
@@ -151,7 +153,7 @@ export default function DashboardPage() {
           <KpiCard icon={<Sparkle className="h-5 w-5" />} label="К уборке" value={pendingHousekeeping} format="number" delta={0} tone="gold" onClick={() => setDrillKey('tasks')} />
         </StaggerList>
       ) : (
-        <StaggerList className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+        <StaggerList className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           <KpiCard icon={<Activity className="h-5 w-5" />} label="Загрузка" value={kpiToday.occupancy} format="percent" delta={4} tone="primary" />
           <KpiCard icon={<Wallet className="h-5 w-5" />} label="Выручка сегодня" value={kpiToday.revenueToday} format="compact-money" delta={12} tone="success" />
           <KpiCard icon={<BedDouble className="h-5 w-5" />} label="ADR" value={kpiToday.adr} format="money" delta={3} tone="gold" />
@@ -162,8 +164,8 @@ export default function DashboardPage() {
       )}
 
       {/* Графики */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <Card className="lg:col-span-2" padding="md">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
+        <Card className="xl:col-span-2" padding="md">
           <CardHeader
             title="Динамика бронирований"
             subtitle="Последние 30 дней"
@@ -214,7 +216,7 @@ export default function DashboardPage() {
       </div>
 
       {/* AI инсайты + Алёрты + Заезды */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
         {/* AI инсайты */}
         <Card padding="md">
           <CardHeader

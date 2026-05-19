@@ -1,5 +1,5 @@
 // Календарь броней: timeline номера × дни + drag&drop (с persist)
-import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   DndContext, useDraggable, useDroppable, type DragEndEvent, PointerSensor, useSensor, useSensors,
@@ -82,7 +82,7 @@ function GridCell({
 }
 
 // ---------- Бронь (draggable) ----------
-function BookingBlock({
+const BookingBlock = memo(function BookingBlock({
   booking, startIdx, length, cellW, onClick, zoom, selected,
 }: { booking: Booking; startIdx: number; length: number; cellW: number; onClick: (e: React.MouseEvent) => void; zoom: Zoom; selected?: boolean; }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -109,9 +109,10 @@ function BookingBlock({
         opacity: isDragging ? 0.8 : 1,
         zIndex: isDragging ? 50 : 1,
         boxShadow: selected ? '0 0 0 2px #f5c451, 0 4px 12px rgba(0,0,0,0.25)' : undefined,
+        willChange: isDragging ? 'transform' : undefined,
       }}
       className={cn(
-        'rounded-btn pl-2.5 pr-2 flex items-center text-xs font-semibold shadow-soft cursor-grab active:cursor-grabbing transition-shadow overflow-hidden relative',
+        'rounded-btn pl-2.5 pr-2 flex items-center text-xs font-semibold shadow-soft cursor-grab active:cursor-grabbing overflow-hidden relative',
         style.bg,
       )}
       title={`${booking.guestName}\n${booking.checkIn} → ${booking.checkOut}\n${fmtMoney(booking.amount)}${tariff ? `\nТариф: ${tariff.label}` : ''}`}
@@ -128,7 +129,7 @@ function BookingBlock({
       </span>
     </div>
   );
-}
+});
 
 // ---------- Главная страница ----------
 export default function GridPage() {

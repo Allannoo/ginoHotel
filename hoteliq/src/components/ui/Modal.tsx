@@ -28,10 +28,13 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
     };
   }, [open, onClose]);
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
-      {open && createPortal(
+      {open && (
         <motion.div
+          key="modal-overlay"
           className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onClick={onClose}
@@ -44,7 +47,7 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
             initial={{ opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
             onClick={(e) => e.stopPropagation()}
           >
             {(title || subtitle) && (
@@ -65,9 +68,9 @@ export function Modal({ open, onClose, title, subtitle, children, footer, size =
               </div>
             )}
           </motion.div>
-        </motion.div>,
-        document.body,
+        </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
