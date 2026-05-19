@@ -2,7 +2,7 @@
 // Типы доменной модели GinoHotel
 // ============================================================
 
-export type PropertyType = 'hotel' | 'apartment';
+export type PropertyType = 'hotel' | 'apartment' | 'house';
 
 export interface Property {
   id: string;
@@ -68,6 +68,15 @@ export interface Booking {
 export type GuestTag = 'VIP' | 'Постоянный' | 'Новый' | 'ЧС' | 'Корпоративный';
 export type LoyaltyTier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
 
+export interface PassportData {
+  series: string;
+  number: string;
+  issuedBy: string;
+  issuedAt: string; // ISO date
+  birthDate: string; // ISO date
+  scanDataUrl?: string; // data URL загруженного скана (мок)
+}
+
 export interface Guest {
   id: string;
   firstName: string;
@@ -84,6 +93,7 @@ export interface Guest {
   blacklisted: boolean;
   notes: string;
   registeredAt: string;
+  passport?: PassportData;
 }
 
 export interface ChannelConnection {
@@ -131,10 +141,28 @@ export interface SyncLogEntry {
   message: string;
 }
 
+export type UserRole = 'admin' | 'manager' | 'reception' | 'cleaner';
+
+// Ключи разделов, к которым может быть предоставлен доступ
+export type PermissionKey =
+  | 'dashboard'
+  | 'grid'
+  | 'properties'
+  | 'channels'
+  | 'guests'
+  | 'finance'
+  | 'tasks'
+  | 'settings'
+  | 'team';
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'manager' | 'reception' | 'cleaner';
+  role: UserRole;
   active: boolean;
+  password?: string; // мок (в реальной системе — хеш на бэке)
+  ownerId?: string; // кто добавил пользователя
+  permissions: PermissionKey[];
+  createdAt?: string;
 }

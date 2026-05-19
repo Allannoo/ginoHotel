@@ -238,11 +238,11 @@ export const staff: Staff[] = [
 // Пользователи системы
 // ============================================================
 export const users: User[] = [
-  { id: 'u_1', name: 'Алексей Смирнов', email: 'a.smirnov@ginohotel.ru', role: 'admin', active: true },
-  { id: 'u_2', name: 'Мария Кузнецова', email: 'm.kuznetsova@ginohotel.ru', role: 'manager', active: true },
-  { id: 'u_3', name: 'Андрей Попов', email: 'a.popov@ginohotel.ru', role: 'reception', active: true },
-  { id: 'u_4', name: 'Светлана Орлова', email: 's.orlova@ginohotel.ru', role: 'cleaner', active: true },
-  { id: 'u_5', name: 'Игорь Никитин', email: 'i.nikitin@ginohotel.ru', role: 'reception', active: false },
+  { id: 'u_1', name: 'Алексей Смирнов', email: 'a.smirnov@ginohotel.ru', role: 'admin', active: true, permissions: [] },
+  { id: 'u_2', name: 'Мария Кузнецова', email: 'm.kuznetsova@ginohotel.ru', role: 'manager', active: true, permissions: [] },
+  { id: 'u_3', name: 'Андрей Попов', email: 'a.popov@ginohotel.ru', role: 'reception', active: true, permissions: [] },
+  { id: 'u_4', name: 'Светлана Орлова', email: 's.orlova@ginohotel.ru', role: 'cleaner', active: true, permissions: [] },
+  { id: 'u_5', name: 'Игорь Никитин', email: 'i.nikitin@ginohotel.ru', role: 'reception', active: false, permissions: [] },
 ];
 
 // ============================================================

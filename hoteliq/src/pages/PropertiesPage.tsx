@@ -12,7 +12,8 @@ import { Modal } from '@/components/ui/Modal';
 import { PropertyCover } from '@/components/ui/PropertyCover';
 import { properties as initialProps, rooms } from '@/mock/data';
 import { fmtMoney, fmtPct, cn } from '@/utils/format';
-import type { Property } from '@/types';
+import type { Property, PropertyType, RoomCategory } from '@/types';
+import { ROOM_CATEGORY_LABEL, ROOM_STATUS_LABEL, PROPERTY_TYPE_LABEL } from '@/utils/i18n';
 import { useToast } from '@/components/ui/Toast';
 
 export default function PropertiesPage() {
@@ -57,7 +58,7 @@ export default function PropertiesPage() {
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-2">
                     <Badge tone={p.type === 'hotel' ? 'primary' : 'gold'}>
-                      {p.type === 'hotel' ? 'Отель' : 'Апартаменты'}
+                      {PROPERTY_TYPE_LABEL[p.type]}
                     </Badge>
                     <span className="flex items-center gap-1 text-sm">
                       <Star className="h-3.5 w-3.5 text-gold fill-gold" />
@@ -96,7 +97,7 @@ export default function PropertiesPage() {
                     <span className="font-bold text-text">{p.name}</span>
                   </td>
                   <td className="px-4 py-3 text-sm text-text-muted">{p.city}</td>
-                  <td className="px-4 py-3"><Badge tone={p.type === 'hotel' ? 'primary' : 'gold'}>{p.type === 'hotel' ? 'Отель' : 'Апт'}</Badge></td>
+                  <td className="px-4 py-3"><Badge tone={p.type === 'hotel' ? 'primary' : 'gold'}>{PROPERTY_TYPE_LABEL[p.type]}</Badge></td>
                   <td className="px-4 py-3 text-sm">{p.rooms}</td>
                   <td className="px-4 py-3"><Badge tone={p.occupancy > 80 ? 'success' : 'warning'}>{p.occupancy}%</Badge></td>
                   <td className="px-4 py-3 text-sm font-bold">{fmtMoney(p.revenueMonth, { compact: true })}</td>
@@ -135,7 +136,7 @@ function PropertyWizard({ open, onClose, onCreate }: {
 }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    name: '', type: 'hotel' as 'hotel' | 'apartment', city: '', address: '', description: '',
+    name: '', type: 'hotel' as PropertyType, city: '', address: '', description: '',
     categories: 'Standard,Deluxe', basePrice: 5000, checkIn: '14:00', checkOut: '12:00',
     photos: [] as string[],
   });
@@ -192,8 +193,12 @@ function PropertyWizard({ open, onClose, onCreate }: {
       {step === 0 && (
         <div className="grid grid-cols-2 gap-4">
           <Input label="Название" placeholder="Гранд-Отель «Метрополь»" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <Select label="Тип" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as 'hotel' | 'apartment' })}
-            options={[{ value: 'hotel', label: 'Отель' }, { value: 'apartment', label: 'Апартаменты / Квартира' }]} />
+          <Select label="Тип" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as PropertyType })}
+            options={[
+              { value: 'hotel', label: PROPERTY_TYPE_LABEL.hotel },
+              { value: 'apartment', label: PROPERTY_TYPE_LABEL.apartment },
+              { value: 'house', label: PROPERTY_TYPE_LABEL.house },
+            ]} />
           <Input label="Город" placeholder="Москва" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
           <Input label="Адрес" placeholder="Театральный пр., 2" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
           <div className="col-span-2">
@@ -206,7 +211,7 @@ function PropertyWizard({ open, onClose, onCreate }: {
         <div className="space-y-4">
           <p className="text-sm text-text-muted">Добавьте категории номеров. Их можно отредактировать позже.</p>
           <div className="space-y-2">
-            {['Standard', 'Deluxe', 'Suite', 'Family', 'Studio'].map((c) => {
+            {(Object.keys(ROOM_CATEGORY_LABEL) as RoomCategory[]).map((c) => {
               const checked = form.categories.split(',').includes(c);
               return (
                 <label key={c} className="flex items-center gap-3 p-3 rounded-btn border border-border hover:bg-surface-2 cursor-pointer">
@@ -215,7 +220,7 @@ function PropertyWizard({ open, onClose, onCreate }: {
                     e.target.checked ? set.add(c) : set.delete(c);
                     setForm({ ...form, categories: [...set].join(',') });
                   }} />
-                  <span className="text-sm font-bold text-text">{c}</span>
+                  <span className="text-sm font-bold text-text">{ROOM_CATEGORY_LABEL[c]}</span>
                   <span className="text-xs text-text-muted ml-auto">Базовая цена от 4 000 ₽</span>
                 </label>
               );
@@ -321,15 +326,14 @@ function PropertyDetailModal({ property, onClose }: { property: Property | null;
             {propRooms.length === 0 && <tr><td colSpan={6} className="text-center text-text-muted py-6">Нет номеров</td></tr>}
             {propRooms.map((r) => {
               const statusTone = { clean: 'success', dirty: 'warning', occupied: 'primary', inspection: 'info', maintenance: 'error' } as const;
-              const statusLabel = { clean: 'Чисто', dirty: 'Грязно', occupied: 'Занят', inspection: 'Проверка', maintenance: 'Ремонт' };
               return (
                 <tr key={r.id} className="border-t border-border">
                   <td className="px-3 py-2 font-bold">{r.number}</td>
-                  <td className="px-3 py-2">{r.category}</td>
+                  <td className="px-3 py-2">{ROOM_CATEGORY_LABEL[r.category]}</td>
                   <td className="px-3 py-2">{r.floor}</td>
                   <td className="px-3 py-2">{r.capacity}</td>
                   <td className="px-3 py-2 font-bold">{fmtMoney(r.basePrice)}</td>
-                  <td className="px-3 py-2"><Badge tone={statusTone[r.status]} dot>{statusLabel[r.status]}</Badge></td>
+                  <td className="px-3 py-2"><Badge tone={statusTone[r.status]} dot>{ROOM_STATUS_LABEL[r.status]}</Badge></td>
                 </tr>
               );
             })}
