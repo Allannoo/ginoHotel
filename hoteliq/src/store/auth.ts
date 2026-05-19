@@ -7,13 +7,13 @@ import type { User, PermissionKey, UserRole } from '@/types';
 export const ALL_PERMISSIONS: PermissionKey[] = [
   'dashboard', 'grid', 'properties', 'channels',
   'guests', 'finance', 'tasks', 'settings', 'team',
-  'pricing', 'expenses', 'roomservice', 'locks', 'mvd',
+  'pricing', 'expenses', 'roomservice', 'locks', 'mvd', 'reports',
 ];
 
 // Базовый набор прав на роль (когда добавляется новый пользователь)
 export const DEFAULT_ROLE_PERMISSIONS: Record<UserRole, PermissionKey[]> = {
   admin: [...ALL_PERMISSIONS],
-  manager: ['dashboard', 'grid', 'properties', 'guests', 'tasks', 'finance', 'pricing', 'expenses', 'roomservice', 'mvd'],
+  manager: ['dashboard', 'grid', 'properties', 'guests', 'tasks', 'finance', 'pricing', 'expenses', 'roomservice', 'mvd', 'reports'],
   reception: ['grid', 'guests', 'tasks', 'roomservice', 'locks', 'mvd'],
   cleaner: ['tasks'],
 };
@@ -33,6 +33,7 @@ export const PERMISSION_LABEL: Record<PermissionKey, string> = {
   roomservice: 'Доставка в номер',
   locks: 'Электронные замки',
   mvd: 'Отчёты МВД',
+  reports: 'Отчёты / Аналитика',
 };
 
 export const ROLE_LABEL: Record<UserRole, string> = {

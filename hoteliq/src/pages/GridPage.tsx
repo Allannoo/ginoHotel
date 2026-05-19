@@ -13,7 +13,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { rooms, properties } from '@/mock/data';
 import { useBookings } from '@/store/bookings';
-import type { Booking, BookingStatus, Guest, PassportData } from '@/types';
+import type { Booking, BookingStatus, Guest, PassportData, Channel, BookingPayment } from '@/types';
 import { fmtMoney, fmtDateShort, daysBetween, cn } from '@/utils/format';
 import { fmtDateLong, MONTHS_NOM, MONTHS_GENITIVE } from '@/utils/i18n';
 import { ROOM_CATEGORY_LABEL, BOOKING_STATUS_LABEL, CHANNEL_LABEL } from '@/utils/i18n';
@@ -491,16 +491,32 @@ export default function GridPage() {
             propertyId: room.propertyId,
             guestId,
             guestName,
-            channel: 'direct',
-            status: 'confirmed',
+            channel: payload.channel,
+            status: payload.status,
             checkIn: payload.checkIn,
             checkOut: toIso(out),
             guests: payload.guests,
-            amount: room.basePrice * payload.nights,
+            amount: (payload.pricePerNight || room.basePrice) * payload.nights,
+            notes: payload.notes,
+            checkInTime: payload.checkInTime,
+            checkOutTime: payload.checkOutTime,
+            pricePerNight: payload.pricePerNight || undefined,
+            commission: payload.commission || undefined,
+            deposit: payload.deposit || undefined,
+            payments: payload.payments.length ? payload.payments : undefined,
+            additionalPhone: payload.additionalPhone,
+            attachments: payload.attachments,
+            sendEmailConfirmation: payload.sendEmailConfirmation,
           };
           addBooking(newBooking);
           setCreateCtx(null);
-          push({ tone: 'success', title: 'Бронь создана', description: guestName });
+          push({
+            tone: 'success',
+            title: 'Бронь создана',
+            description: payload.sendEmailConfirmation && payload.guest?.email
+              ? `${guestName} · Подтверждение отправлено на ${payload.guest.email}`
+              : guestName,
+          });
         }}
       />
 
@@ -621,7 +637,7 @@ function Info({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-// ---------- Быстрое создание (с паспортными данными) ----------
+// ---------- Быстрое создание (с паспортными данными + расширенными полями) ----------
 type CreatePayload = {
   roomId: string;
   checkIn: string;
@@ -629,6 +645,19 @@ type CreatePayload = {
   guests: number;
   name: string;
   registerGuest: boolean;
+  // Расширенные поля
+  status: BookingStatus;
+  channel: Channel;
+  checkInTime: string;
+  checkOutTime: string;
+  pricePerNight: number;
+  commission: number;
+  deposit: number;
+  payments: BookingPayment[];
+  additionalPhone?: string;
+  attachments?: string[];
+  notes?: string;
+  sendEmailConfirmation: boolean;
   guest?: {
     firstName: string;
     lastName: string;
@@ -643,6 +672,8 @@ function CreateBookingModal({ ctx, onClose, onCreate }: {
   onClose: () => void;
   onCreate: (p: CreatePayload) => void;
 }) {
+  const { push } = useToast();
+  const [tab, setTab] = useState<'main' | 'special'>('main');
   const [name, setName] = useState('');
   const [nights, setNights] = useState(2);
   const [guestsCount, setGuestsCount] = useState(1);
@@ -651,29 +682,82 @@ function CreateBookingModal({ ctx, onClose, onCreate }: {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [additionalPhone, setAdditionalPhone] = useState('');
   const [series, setSeries] = useState('');
   const [number, setNumber] = useState('');
   const [issuedBy, setIssuedBy] = useState('');
   const [issuedAt, setIssuedAt] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [scan, setScan] = useState<string | undefined>(undefined);
+  // Расширенные
+  const [status, setStatus] = useState<BookingStatus>('confirmed');
+  const [channel, setChannel] = useState<Channel>('direct');
+  const [checkInTime, setCheckInTime] = useState('14:00');
+  const [checkOutTime, setCheckOutTime] = useState('12:00');
+  const [pricePerNight, setPricePerNight] = useState<number>(0);
+  const [pricePerNightTouched, setPricePerNightTouched] = useState(false);
+  const [commission, setCommission] = useState<number>(0);
+  const [deposit, setDeposit] = useState<number>(0);
+  const [payments, setPayments] = useState<BookingPayment[]>([]);
+  const [attachments, setAttachments] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
+  const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
+  const [showPayModal, setShowPayModal] = useState<null | 'add' | 'refund'>(null);
+
+  // OCR-мок: автозаполнение паспорта при загрузке скана
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setScan(String(reader.result));
+      // OCR-симуляция (МВД): через 1.2с заполняем поля если они пусты
+      setTimeout(() => {
+        const seed = (Math.floor(Math.random() * 9000) + 1000).toString();
+        const num = (Math.floor(Math.random() * 900000) + 100000).toString();
+        setSeries((v) => v || seed);
+        setNumber((v) => v || num);
+        setIssuedBy((v) => v || 'ОУФМС России по г. Владикавказу');
+        setIssuedAt((v) => v || '2018-05-15');
+        setBirthDate((v) => v || '1990-01-01');
+        push({ tone: 'success', title: 'Паспорт распознан', description: 'Точность OCR ≈ 94% · проверьте поля' });
+      }, 1200);
+    };
+    reader.readAsDataURL(f);
+  };
+
+  const handleAttachment = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    files.forEach((f) => {
+      const r = new FileReader();
+      r.onload = () => setAttachments((arr) => [...arr, String(r.result)]);
+      r.readAsDataURL(f);
+    });
+  };
 
   if (!ctx) return null;
   const room = rooms.find((r) => r.id === ctx.roomId);
   const prop = properties.find((p) => p.id === room?.propertyId);
 
-  const reset = () => {
-    setName(''); setNights(2); setGuestsCount(1); setRegister(true);
-    setFirstName(''); setLastName(''); setEmail(''); setPhone('');
-    setSeries(''); setNumber(''); setIssuedBy(''); setIssuedAt(''); setBirthDate(''); setScan(undefined);
-  };
+  // Цена за сутки авто из тарифа, пока пользователь не тронул
+  useEffect(() => {
+    if (room && !pricePerNightTouched) setPricePerNight(room.basePrice);
+  }, [room?.id, pricePerNightTouched]);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => setScan(String(reader.result));
-    reader.readAsDataURL(f);
+  const totalRooms = (pricePerNight || 0) * nights;
+  const paid = payments.reduce((acc, p) => acc + (p.refund ? -p.amount : p.amount), 0);
+  const balance = totalRooms - paid;
+
+  const reset = () => {
+    setTab('main');
+    setName(''); setNights(2); setGuestsCount(1); setRegister(true);
+    setFirstName(''); setLastName(''); setEmail(''); setPhone(''); setAdditionalPhone('');
+    setSeries(''); setNumber(''); setIssuedBy(''); setIssuedAt(''); setBirthDate(''); setScan(undefined);
+    setStatus('confirmed'); setChannel('direct');
+    setCheckInTime('14:00'); setCheckOutTime('12:00');
+    setPricePerNight(0); setPricePerNightTouched(false);
+    setCommission(0); setDeposit(0); setPayments([]); setAttachments([]); setNotes('');
+    setSendEmailConfirmation(true);
   };
 
   const fullName = register ? `${lastName} ${firstName}`.trim() : name.trim();
@@ -691,6 +775,12 @@ function CreateBookingModal({ ctx, onClose, onCreate }: {
       guests: guestsCount,
       name: fullName,
       registerGuest: register,
+      status, channel, checkInTime, checkOutTime,
+      pricePerNight, commission, deposit, payments,
+      additionalPhone: additionalPhone || undefined,
+      attachments: attachments.length ? attachments : undefined,
+      notes: notes || undefined,
+      sendEmailConfirmation,
       guest: register
         ? { firstName, lastName, email, phone, passport }
         : undefined,
@@ -712,82 +802,308 @@ function CreateBookingModal({ ctx, onClose, onCreate }: {
         </>
       }
     >
-      <div className="space-y-5">
-        {/* Переключатель: быстрая бронь vs регистрация гостя */}
-        <div className="flex items-center gap-3 p-3 rounded-btn bg-surface-2 border border-border">
-          <input
-            id="reg-guest"
-            type="checkbox"
-            checked={register}
-            onChange={(e) => setRegister(e.target.checked)}
-            className="h-4 w-4 rounded border-border accent-primary"
-          />
-          <label htmlFor="reg-guest" className="text-sm text-text flex items-center gap-2 cursor-pointer">
-            <BadgeCheck className="h-4 w-4 text-primary" />
-            Зарегистрировать гостя и внести паспортные данные
+      {/* Табы */}
+      <div className="flex gap-1 mb-4 border-b border-border">
+        {[
+          { id: 'main' as const, label: 'Создание брони' },
+          { id: 'special' as const, label: 'Спец. условия' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={cn(
+              'px-4 py-2 text-sm font-bold border-b-2 -mb-px transition-colors',
+              tab === t.id ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text',
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'main' && (
+        <div className="space-y-5">
+          {/* Статус + источник */}
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Статус брони"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as BookingStatus)}
+              options={(Object.keys(BOOKING_STATUS_LABEL) as BookingStatus[]).map((s) => ({ value: s, label: BOOKING_STATUS_LABEL[s] }))}
+            />
+            <Select
+              label="Источник бронирования"
+              value={channel}
+              onChange={(e) => setChannel(e.target.value as Channel)}
+              options={(Object.keys(CHANNEL_LABEL) as Channel[]).map((c) => ({ value: c, label: CHANNEL_LABEL[c] }))}
+            />
+          </div>
+
+          {/* Регистрация */}
+          <div className="flex items-center gap-3 p-3 rounded-btn bg-surface-2 border border-border">
+            <input
+              id="reg-guest"
+              type="checkbox"
+              checked={register}
+              onChange={(e) => setRegister(e.target.checked)}
+              className="h-4 w-4 rounded border-border accent-primary"
+            />
+            <label htmlFor="reg-guest" className="text-sm text-text flex items-center gap-2 cursor-pointer">
+              <BadgeCheck className="h-4 w-4 text-primary" />
+              Зарегистрировать гостя и внести паспортные данные
+            </label>
+          </div>
+
+          {/* Сроки и гости */}
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Ночей" type="number" min={1} max={60} value={nights} onChange={(e) => setNights(+e.target.value || 1)} />
+            <Input label="Гостей" type="number" min={1} max={10} value={guestsCount} onChange={(e) => setGuestsCount(+e.target.value || 1)} />
+            <Input label="Время заезда" type="time" value={checkInTime} onChange={(e) => setCheckInTime(e.target.value)} />
+            <Input label="Время выезда" type="time" value={checkOutTime} onChange={(e) => setCheckOutTime(e.target.value)} />
+          </div>
+
+          {!register && (
+            <Input label="Имя гостя" placeholder="Иван Иванов" value={name} onChange={(e) => setName(e.target.value)} />
+          )}
+
+          {register && (
+            <>
+              <div className="flex items-center gap-2 text-xs uppercase font-bold text-text-muted tracking-wide">
+                <span className="h-px flex-1 bg-border" />
+                <span>Контакты гостя</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Фамилия *" placeholder="Иванов" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                <Input label="Имя *" placeholder="Иван" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                <Input label="Телефон *" placeholder="+7 999 123 45 67" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Input label="Email" type="email" placeholder="guest@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Input label="Доп. телефон" placeholder="+7 999 765 43 21" value={additionalPhone} onChange={(e) => setAdditionalPhone(e.target.value)} />
+              </div>
+
+              <div className="flex items-center gap-2 text-xs uppercase font-bold text-text-muted tracking-wide">
+                <span className="h-px flex-1 bg-border" />
+                <span>Паспортные данные</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Серия" placeholder="4500" value={series} onChange={(e) => setSeries(e.target.value)} />
+                <Input label="Номер" placeholder="123456" value={number} onChange={(e) => setNumber(e.target.value)} />
+              </div>
+              <Textarea label="Кем выдан" rows={2} placeholder="ОУФМС России по г. Москве" value={issuedBy} onChange={(e) => setIssuedBy(e.target.value)} />
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Дата выдачи" type="date" value={issuedAt} onChange={(e) => setIssuedAt(e.target.value)} />
+                <Input label="Дата рождения" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+              </div>
+
+              {/* Скан паспорта + OCR */}
+              <div>
+                <p className="text-[11px] uppercase font-bold text-text-muted mb-1.5">Скан / фото паспорта · автораспознавание МВД</p>
+                <label className="flex items-center gap-3 p-3 rounded-btn border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer">
+                  <Upload className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-sm text-text-muted flex-1">
+                    {scan ? 'Файл загружен — нажмите чтобы заменить' : 'Нажмите чтобы выбрать PNG / JPG / PDF (поля заполнятся автоматически)'}
+                  </span>
+                  <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFile} />
+                </label>
+                {scan && scan.startsWith('data:image') && (
+                  <img src={scan} alt="Скан паспорта" className="mt-2 rounded-btn border border-border max-h-32 object-contain" />
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Итоговая сумма */}
+          <div className="flex items-center justify-between p-3 rounded-btn bg-primary/5 border border-primary/20">
+            <span className="text-sm text-text">Стоимость номеров</span>
+            <span className="font-display text-2xl text-primary">{fmtMoney(totalRooms)}</span>
+          </div>
+        </div>
+      )}
+
+      {tab === 'special' && (
+        <div className="space-y-4">
+          {/* Цены */}
+          <Card padding="md">
+            <p className="text-xs uppercase font-bold text-text-muted mb-3">Цены</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Цена за сутки, ₽"
+                type="number"
+                min={0}
+                value={pricePerNight}
+                onChange={(e) => { setPricePerNight(+e.target.value || 0); setPricePerNightTouched(true); }}
+              />
+              <Input label="Сумма за период, ₽" value={fmtMoney(totalRooms)} readOnly />
+              <Input
+                label="Комиссия площадки, ₽"
+                type="number"
+                min={0}
+                value={commission}
+                onChange={(e) => setCommission(+e.target.value || 0)}
+              />
+              <Input
+                label="Залог, ₽"
+                type="number"
+                min={0}
+                value={deposit}
+                onChange={(e) => setDeposit(+e.target.value || 0)}
+              />
+            </div>
+          </Card>
+
+          {/* Оплаты */}
+          <Card padding="md">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-xs uppercase font-bold text-text-muted">Оплачено</p>
+                <p className="text-lg font-display text-text">{fmtMoney(paid)} <span className="text-sm text-text-muted">из {fmtMoney(totalRooms)}</span></p>
+                {balance !== 0 && (
+                  <p className={cn('text-xs font-bold', balance > 0 ? 'text-warning' : 'text-success')}>
+                    {balance > 0 ? `Остаток: ${fmtMoney(balance)}` : `Переплата: ${fmtMoney(-balance)}`}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" leftIcon={<Plus className="h-3.5 w-3.5" />} onClick={() => setShowPayModal('add')}>Платёж</Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowPayModal('refund')} disabled={paid <= 0}>Возврат</Button>
+              </div>
+            </div>
+            {payments.length > 0 && (
+              <div className="space-y-1">
+                {payments.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between text-sm border border-border rounded-btn px-3 py-1.5">
+                    <span className="text-text-muted">{new Date(p.at).toLocaleString('ru')} · {METHOD_LABEL[p.method]}</span>
+                    <span className={cn('font-bold', p.refund ? 'text-error' : 'text-success')}>
+                      {p.refund ? '−' : '+'}{fmtMoney(p.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Онлайн-договор */}
+          <Card padding="md">
+            <p className="text-xs uppercase font-bold text-text-muted mb-2">Онлайн-договор</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-text-muted">Отправьте гостю ссылку — он подпишет договор СМС-кодом без визита.</p>
+              <Button variant="secondary" size="sm" onClick={() => push({ tone: 'info', title: 'Подключите интеграцию', description: 'Контур.Сайн / FrontDesk24 / DocBoom — Настройки → Интеграции' })}>
+                Подключить
+              </Button>
+            </div>
+          </Card>
+
+          {/* Файлы */}
+          <Card padding="md">
+            <p className="text-xs uppercase font-bold text-text-muted mb-2">Файлы и документы</p>
+            <label className="flex items-center gap-3 p-3 rounded-btn border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer">
+              <Upload className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-sm text-text-muted flex-1">
+                {attachments.length ? `Загружено файлов: ${attachments.length}` : 'Прикрепить квитанции, договоры, фото (можно несколько)'}
+              </span>
+              <input type="file" multiple className="hidden" onChange={handleAttachment} />
+            </label>
+            {attachments.length > 0 && (
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {attachments.map((a, i) => (
+                  <div key={i} className="text-[11px] px-2 py-1 rounded-btn bg-surface-2 border border-border flex items-center gap-1">
+                    <FileText className="h-3 w-3" />
+                    Файл {i + 1}
+                    <button type="button" onClick={() => setAttachments((arr) => arr.filter((_, j) => j !== i))} className="ml-1 text-text-muted hover:text-error">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Примечание */}
+          <Textarea label="Примечание к брони" rows={3} placeholder="Особые пожелания, аллергии, доп. услуги..." value={notes} onChange={(e) => setNotes(e.target.value)} />
+
+          {/* Email подтверждение */}
+          <label className="flex items-center gap-3 p-3 rounded-btn bg-surface-2 border border-border cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sendEmailConfirmation}
+              onChange={(e) => setSendEmailConfirmation(e.target.checked)}
+              className="h-4 w-4 rounded border-border accent-primary"
+            />
+            <span className="text-sm text-text">Отправить подтверждение бронирования на email гостя</span>
           </label>
         </div>
+      )}
 
-        {/* Общие параметры */}
-        <div className="grid grid-cols-2 gap-3">
-          <Input label="Ночей" type="number" min={1} max={60} value={nights} onChange={(e) => setNights(+e.target.value || 1)} />
-          <Input label="Гостей" type="number" min={1} max={10} value={guestsCount} onChange={(e) => setGuestsCount(+e.target.value || 1)} />
-        </div>
+      {/* Подмодалка платежа */}
+      <PaymentSubModal
+        mode={showPayModal}
+        maxRefund={paid}
+        onClose={() => setShowPayModal(null)}
+        onSave={(amount, method, note) => {
+          setPayments((arr) => [...arr, {
+            id: `p_${Date.now()}`,
+            amount,
+            method,
+            at: new Date().toISOString(),
+            refund: showPayModal === 'refund',
+            note,
+          }]);
+          setShowPayModal(null);
+        }}
+      />
+    </Modal>
+  );
+}
 
-        {!register && (
-          <Input label="Имя гостя" placeholder="Иван Иванов" value={name} onChange={(e) => setName(e.target.value)} />
+const METHOD_LABEL: Record<BookingPayment['method'], string> = {
+  cash: 'Наличные',
+  card: 'Карта',
+  transfer: 'Перевод',
+  online: 'Онлайн-оплата',
+};
+
+function PaymentSubModal({ mode, maxRefund, onClose, onSave }: {
+  mode: null | 'add' | 'refund';
+  maxRefund: number;
+  onClose: () => void;
+  onSave: (amount: number, method: BookingPayment['method'], note?: string) => void;
+}) {
+  const [amount, setAmount] = useState<number>(0);
+  const [method, setMethod] = useState<BookingPayment['method']>('cash');
+  const [note, setNote] = useState('');
+  const isRefund = mode === 'refund';
+
+  useEffect(() => { if (mode) { setAmount(0); setMethod('cash'); setNote(''); } }, [mode]);
+
+  const canSave = amount > 0 && (!isRefund || amount <= maxRefund);
+
+  return (
+    <Modal
+      open={!!mode}
+      onClose={onClose}
+      title={isRefund ? 'Возврат платежа' : 'Внести платёж'}
+      size="sm"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Отмена</Button>
+          <Button onClick={() => onSave(amount, method, note || undefined)} disabled={!canSave}>
+            {isRefund ? 'Вернуть' : 'Внести'}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <Input label="Сумма, ₽" type="number" min={0} value={amount} onChange={(e) => setAmount(+e.target.value || 0)} autoFocus />
+        <Select
+          label="Способ"
+          value={method}
+          onChange={(e) => setMethod(e.target.value as BookingPayment['method'])}
+          options={(Object.keys(METHOD_LABEL) as BookingPayment['method'][]).map((m) => ({ value: m, label: METHOD_LABEL[m] }))}
+        />
+        <Input label="Комментарий" value={note} onChange={(e) => setNote(e.target.value)} placeholder="(необязательно)" />
+        {isRefund && (
+          <p className="text-xs text-text-muted">Доступно к возврату: <span className="font-bold text-text">{fmtMoney(maxRefund)}</span></p>
         )}
-
-        {register && (
-          <>
-            <div className="flex items-center gap-2 text-xs uppercase font-bold text-text-muted tracking-wide">
-              <span className="h-px flex-1 bg-border" />
-              <span>Контакты гостя</span>
-              <span className="h-px flex-1 bg-border" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Фамилия *" placeholder="Иванов" value={lastName} onChange={(e) => setLastName(e.target.value)} />
-              <Input label="Имя *" placeholder="Иван" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-              <Input label="Телефон *" placeholder="+7 999 123 45 67" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              <Input label="Email" type="email" placeholder="guest@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-
-            <div className="flex items-center gap-2 text-xs uppercase font-bold text-text-muted tracking-wide">
-              <span className="h-px flex-1 bg-border" />
-              <span>Паспортные данные</span>
-              <span className="h-px flex-1 bg-border" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Серия" placeholder="4500" value={series} onChange={(e) => setSeries(e.target.value)} />
-              <Input label="Номер" placeholder="123456" value={number} onChange={(e) => setNumber(e.target.value)} />
-            </div>
-            <Textarea label="Кем выдан" rows={2} placeholder="ОУФМС России по г. Москве" value={issuedBy} onChange={(e) => setIssuedBy(e.target.value)} />
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Дата выдачи" type="date" value={issuedAt} onChange={(e) => setIssuedAt(e.target.value)} />
-              <Input label="Дата рождения" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
-            </div>
-
-            {/* Скан паспорта */}
-            <div>
-              <p className="text-[11px] uppercase font-bold text-text-muted mb-1.5">Скан / фото паспорта</p>
-              <label className="flex items-center gap-3 p-3 rounded-btn border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer">
-                <Upload className="h-4 w-4 text-primary shrink-0" />
-                <span className="text-sm text-text-muted flex-1">
-                  {scan ? 'Файл загружен — нажмите, чтобы заменить' : 'Нажмите чтобы выбрать PNG / JPG / PDF'}
-                </span>
-                <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFile} />
-              </label>
-              {scan && scan.startsWith('data:image') && (
-                <img src={scan} alt="Скан паспорта" className="mt-2 rounded-btn border border-border max-h-32 object-contain" />
-              )}
-            </div>
-          </>
-        )}
-
-        <div className="flex items-center justify-between p-3 rounded-btn bg-primary/5 border border-primary/20">
-          <span className="text-sm text-text">Итоговая сумма</span>
-          <span className="font-display text-2xl text-primary">{room && fmtMoney(room.basePrice * nights)}</span>
-        </div>
       </div>
     </Modal>
   );

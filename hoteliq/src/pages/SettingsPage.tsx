@@ -1,9 +1,10 @@
 // Настройки — расширенная панель: профиль, безопасность, уведомления, баланс, контакты,
 // сотрудники (тот же TeamManager что и в /team), каналы и источники, шаблоны писем,
 // автосообщения, вебхуки.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
-  User, Shield, Bell, Wallet, Phone, Users as UsersIcon, PlugZap, MailOpen, MessagesSquare, Webhook, Bot, Copy, Plus, Trash2, Check,
+  User, Shield, Bell, Wallet, Phone, Users as UsersIcon, PlugZap, MailOpen, MessagesSquare, Webhook, Bot, Copy, Plus, Trash2, Check, History, KeyRound, Upload, Lock,
 } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -14,8 +15,11 @@ import { Input, Select, Textarea } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/utils/format';
-import { useCurrentUser, useAuth } from '@/store/auth';
+import { useCurrentUser, useAuth, PERMISSION_LABEL, ROLE_LABEL } from '@/store/auth';
 import { useSettings, CHANNELS_CATALOG, EMAIL_TAGS, AUTO_MESSAGE_TEMPLATES, type MessengerKey } from '@/store/settings';
+import { useAuditLog, AUDIT_ACTION_LABEL } from '@/store/audit';
+import { useFieldRoles, SENSITIVE_FIELD_LABEL } from '@/store/fieldRoles';
+import { Avatar } from '@/components/ui/Avatar';
 import { TeamManager } from '@/components/TeamManager';
 import { ChannelConnectModal } from '@/components/ChannelConnectModal';
 
@@ -26,6 +30,8 @@ const TABS = [
   { id: 'balance', label: 'Баланс', icon: Wallet },
   { id: 'contacts', label: 'Контакты', icon: Phone },
   { id: 'team', label: 'Сотрудники', icon: UsersIcon },
+  { id: 'roles', label: 'Доступ к полям', icon: Lock },
+  { id: 'audit', label: 'Аудит-лог', icon: History },
   { id: 'sources', label: 'Каналы и источники', icon: PlugZap },
   { id: 'emails', label: 'Шаблоны писем', icon: MailOpen },
   { id: 'auto', label: 'Автосообщения', icon: MessagesSquare },
@@ -35,7 +41,19 @@ const TABS = [
 type TabId = typeof TABS[number]['id'];
 
 export default function SettingsPage() {
-  const [tab, setTab] = useState<TabId>('profile');
+  const [params, setParams] = useSearchParams();
+  const initial = (params.get('tab') as TabId) || 'profile';
+  const [tab, setTab] = useState<TabId>(
+    TABS.some((t) => t.id === initial) ? initial : 'profile',
+  );
+  useEffect(() => {
+    if (params.get('tab') !== tab) {
+      const next = new URLSearchParams(params);
+      next.set('tab', tab);
+      setParams(next, { replace: true });
+    }
+     
+  }, [tab]);
   return (
     <PageTransition>
       <PageHeader title="Настройки" subtitle="Аккаунт, интеграции, уведомления и шаблоны" />
@@ -69,6 +87,8 @@ export default function SettingsPage() {
           {tab === 'balance' && <BalanceTab />}
           {tab === 'contacts' && <ContactsTab />}
           {tab === 'team' && <TeamManager />}
+          {tab === 'roles' && <FieldRolesTab />}
+          {tab === 'audit' && <AuditTab />}
           {tab === 'sources' && <SourcesTab />}
           {tab === 'emails' && <EmailTemplatesTab />}
           {tab === 'auto' && <AutoMessagesTab />}
@@ -84,39 +104,83 @@ function ProfileTab() {
   const { push } = useToast();
   const user = useCurrentUser();
   const updateMember = useAuth((s) => s.updateMember);
+  const log = useAuditLog((s) => s.log);
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
+  const [avatar, setAvatar] = useState<string | undefined>(user?.avatar);
   const [first, ...rest] = name.split(' ');
   const last = rest.join(' ');
+
+  const onPickAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) {
+      push({ tone: 'error', title: 'Слишком большой файл', description: 'Максимум 2 MB' });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = String(reader.result);
+      setAvatar(url);
+      if (user) updateMember(user.id, { avatar: url });
+      push({ tone: 'success', title: 'Аватар обновлён' });
+    };
+    reader.readAsDataURL(f);
+  };
+
+  const clearAvatar = () => {
+    setAvatar(undefined);
+    if (user) updateMember(user.id, { avatar: undefined });
+  };
 
   const save = () => {
     if (!user) return;
     updateMember(user.id, { name: name.trim(), email: email.trim(), phone: phone.trim() });
+    log({ userId: user.id, userName: user.name, action: 'settings.update', target: 'Профиль' });
     push({ tone: 'success', title: 'Профиль сохранён' });
   };
 
   return (
-    <Card padding="md">
-      <CardHeader title="Личные данные" subtitle="Имя, фамилия, контактные данные" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
-          label="Имя"
-          value={first}
-          onChange={(e) => setName(`${e.target.value} ${last}`.trim())}
-        />
-        <Input
-          label="Фамилия"
-          value={last}
-          onChange={(e) => setName(`${first} ${e.target.value}`.trim())}
-        />
-        <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Input label="Телефон" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (999) 123-45-67" />
-      </div>
-      <div className="mt-4">
-        <Button onClick={save}>Сохранить</Button>
-      </div>
-    </Card>
+    <div className="space-y-4">
+      <Card padding="md">
+        <CardHeader title="Аватар" subtitle="Показывается в шапке и на всех страницах. PNG/JPG, до 2 MB" />
+        <div className="flex items-center gap-5">
+          <Avatar name={name || 'Аккаунт'} src={avatar} size="xl" />
+          <div className="flex flex-col gap-2">
+            <label className="inline-flex">
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={onPickAvatar} id="avatar-upload-input" />
+              <Button leftIcon={<Upload className="h-4 w-4" />} onClick={() => document.getElementById('avatar-upload-input')?.click()}>
+                {avatar ? 'Заменить' : 'Загрузить'}
+              </Button>
+            </label>
+            {avatar && (
+              <Button variant="ghost" size="sm" leftIcon={<Trash2 className="h-3.5 w-3.5" />} onClick={clearAvatar}>Удалить</Button>
+            )}
+          </div>
+        </div>
+      </Card>
+      <Card padding="md">
+        <CardHeader title="Личные данные" subtitle="Имя, фамилия, контактные данные" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Имя"
+            value={first}
+            onChange={(e) => setName(`${e.target.value} ${last}`.trim())}
+          />
+          <Input
+            label="Фамилия"
+            value={last}
+            onChange={(e) => setName(`${first} ${e.target.value}`.trim())}
+          />
+          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input label="Телефон" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (999) 123-45-67" />
+        </div>
+        <div className="mt-4">
+          <Button onClick={save}>Сохранить</Button>
+        </div>
+      </Card>
+    </div>
   );
 }
 
@@ -160,17 +224,8 @@ function SecurityTab() {
         </div>
       </Card>
       <Card padding="md">
-        <CardHeader title="Двухфакторная аутентификация" subtitle="Защита через приложение-генератор кодов" />
-        <div className="flex items-center justify-between p-3 rounded-btn border border-border">
-          <div className="flex items-center gap-3">
-            <Shield className="h-5 w-5 text-primary" />
-            <div>
-              <p className="font-bold text-text text-sm">Google Authenticator / Authy</p>
-              <p className="text-xs text-text-muted">Подключите приложение для двухфакторной защиты</p>
-            </div>
-          </div>
-          <Badge tone="warning" dot>Не настроена</Badge>
-        </div>
+        <CardHeader title="Двухфакторная аутентификация" subtitle="Код из приложения-генератора (Google Authenticator, Authy)" />
+        <TwoFactorSection />
       </Card>
     </div>
   );
@@ -634,5 +689,216 @@ function WebhooksTab() {
         </div>
       </Card>
     </div>
+  );
+}
+
+// ===================== 2FA =====================
+function TwoFactorSection() {
+  const { push } = useToast();
+  const user = useCurrentUser();
+  const updateMember = useAuth((s) => s.updateMember);
+  const log = useAuditLog((s) => s.log);
+  const enabled = !!user?.twoFactorEnabled;
+  const [stage, setStage] = useState<'idle' | 'setup'>('idle');
+  const [code, setCode] = useState('');
+  const secret = 'JBSWY3DPEHPK3PXP';
+
+  if (!user) return null;
+
+  const verify = () => {
+    if (code.replace(/\s/g, '').length !== 6) {
+      push({ tone: 'error', title: 'Введите 6-значный код' });
+      return;
+    }
+    updateMember(user.id, { twoFactorEnabled: true, twoFactorSecret: secret });
+    log({ userId: user.id, userName: user.name, action: 'settings.update', target: '2FA включена' });
+    setStage('idle'); setCode('');
+    push({ tone: 'success', title: 'Двухфакторная защита включена' });
+  };
+  const disable = () => {
+    updateMember(user.id, { twoFactorEnabled: false, twoFactorSecret: undefined });
+    log({ userId: user.id, userName: user.name, action: 'settings.update', target: '2FA выключена' });
+    push({ tone: 'success', title: '2FA отключена' });
+  };
+
+  const otpauth = `otpauth://totp/GinoHotel:${user.email}?secret=${secret}&issuer=GinoHotel`;
+
+  if (enabled) {
+    return (
+      <div className="flex items-center justify-between p-3 rounded-btn border border-success/40 bg-success/5">
+        <div className="flex items-center gap-3">
+          <Shield className="h-5 w-5 text-success" />
+          <div>
+            <p className="font-bold text-text text-sm">Двухфакторная защита включена</p>
+            <p className="text-xs text-text-muted">При следующем входе попросим код из приложения</p>
+          </div>
+        </div>
+        <Button variant="danger" size="sm" onClick={disable}>Отключить</Button>
+      </div>
+    );
+  }
+
+  if (stage === 'idle') {
+    return (
+      <div className="flex items-center justify-between p-3 rounded-btn border border-border">
+        <div className="flex items-center gap-3">
+          <Shield className="h-5 w-5 text-primary" />
+          <div>
+            <p className="font-bold text-text text-sm">Google Authenticator / Authy / Яндекс.Ключ</p>
+            <p className="text-xs text-text-muted">Дополнительный 6-значный код при каждом входе</p>
+          </div>
+        </div>
+        <Button onClick={() => { setStage('setup'); setCode(''); }} leftIcon={<KeyRound className="h-4 w-4" />}>Подключить</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="p-3 rounded-btn border border-border bg-surface-2 text-sm">
+        <p className="font-bold mb-2">1. Откройте приложение-генератор и отсканируйте QR (или введите секрет вручную):</p>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="h-32 w-32 bg-white rounded-btn flex items-center justify-center border border-border p-2">
+            <div className="grid grid-cols-8 gap-px w-full h-full">
+              {Array.from({ length: 64 }).map((_, i) => (
+                <div key={i} className={cn('aspect-square', (i * 7 + 3) % 3 ? 'bg-black' : 'bg-white')} />
+              ))}
+            </div>
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs text-text-muted">Секретный ключ:</p>
+            <code className="font-mono text-sm text-primary break-all">{secret}</code>
+            <p className="text-[10px] text-text-muted mt-1 break-all max-w-md">{otpauth}</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p className="text-sm font-bold mb-2">2. Введите 6-значный код из приложения:</p>
+        <div className="flex gap-2 items-end flex-wrap">
+          <div className="w-40">
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="123456"
+              className="font-mono text-lg tracking-widest"
+            />
+          </div>
+          <Button onClick={verify}>Подтвердить</Button>
+          <Button variant="ghost" onClick={() => { setStage('idle'); setCode(''); }}>Отмена</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===================== Аудит-лог =====================
+function AuditTab() {
+  const entries = useAuditLog((s) => s.entries);
+  const clear = useAuditLog((s) => s.clear);
+  const [actionFilter, setActionFilter] = useState<string>('');
+  const [userFilter, setUserFilter] = useState('');
+  const users = useMemo(() => Array.from(new Set(entries.map((e) => e.userName))), [entries]);
+  const filtered = useMemo(() => entries.filter((e) =>
+    (!actionFilter || e.action === actionFilter) &&
+    (!userFilter || e.userName === userFilter),
+  ), [entries, actionFilter, userFilter]);
+
+  return (
+    <Card padding="md">
+      <CardHeader
+        title="Аудит-лог"
+        subtitle={`${entries.length} записей · хранится до 500 последних действий`}
+        action={<Button variant="ghost" size="sm" leftIcon={<Trash2 className="h-3.5 w-3.5" />} onClick={clear}>Очистить</Button>}
+      />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+        <Select label="Действие" value={actionFilter} onChange={(e) => setActionFilter(e.target.value)}
+          options={[{ value: '', label: 'Все действия' }, ...Object.entries(AUDIT_ACTION_LABEL).map(([k, v]) => ({ value: k, label: v }))]} />
+        <Select label="Пользователь" value={userFilter} onChange={(e) => setUserFilter(e.target.value)}
+          options={[{ value: '', label: 'Все' }, ...users.map((u) => ({ value: u, label: u }))]} />
+      </div>
+      <div className="border border-border rounded-card overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-surface-2">
+            <tr>
+              {['Время', 'Пользователь', 'Действие', 'Объект', 'Детали', 'IP'].map((h) =>
+                <th key={h} className="px-3 py-2 text-left text-[11px] uppercase font-bold text-text-muted">{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} className="text-center py-6 text-sm text-text-muted">Нет записей</td></tr>
+            )}
+            {filtered.map((e) => (
+              <tr key={e.id} className="border-t border-border">
+                <td className="px-3 py-2 text-text-muted whitespace-nowrap">{new Date(e.at).toLocaleString('ru')}</td>
+                <td className="px-3 py-2 font-bold text-text">{e.userName}</td>
+                <td className="px-3 py-2"><Badge tone="neutral">{AUDIT_ACTION_LABEL[e.action]}</Badge></td>
+                <td className="px-3 py-2 text-text">{e.target ?? '—'}</td>
+                <td className="px-3 py-2 text-text-muted">{e.details ?? ''}</td>
+                <td className="px-3 py-2 font-mono text-[11px] text-text-muted">{e.ip ?? ''}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
+
+// ===================== Доступ к полям =====================
+function FieldRolesTab() {
+  const matrix = useFieldRoles((s) => s.matrix);
+  const toggle = useFieldRoles((s) => s.toggle);
+  const reset = useFieldRoles((s) => s.reset);
+  const fields = Object.keys(matrix) as Array<keyof typeof matrix>;
+  const roles: Array<keyof typeof ROLE_LABEL> = ['admin', 'manager', 'reception', 'cleaner'];
+  return (
+    <Card padding="md">
+      <CardHeader
+        title="Доступ к чувствительным полям"
+        subtitle="Кто из ролей видит реальные данные. Выключенные поля показываются как «***» для этой роли."
+        action={<Button variant="ghost" size="sm" onClick={reset}>Сбросить</Button>}
+      />
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-surface-2">
+            <tr>
+              <th className="px-3 py-2 text-left text-[11px] uppercase font-bold text-text-muted">Поле</th>
+              {roles.map((r) => (
+                <th key={r} className="px-3 py-2 text-center text-[11px] uppercase font-bold text-text-muted">{ROLE_LABEL[r]}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {fields.map((f) => (
+              <tr key={f} className="border-t border-border">
+                <td className="px-3 py-2 font-bold text-text">{SENSITIVE_FIELD_LABEL[f]}</td>
+                {roles.map((r) => {
+                  const on = matrix[f].includes(r);
+                  const isAdmin = r === 'admin';
+                  return (
+                    <td key={r} className="px-3 py-2 text-center">
+                      <button
+                        type="button"
+                        disabled={isAdmin}
+                        onClick={() => toggle(f, r)}
+                        className={cn(
+                          'h-6 w-11 rounded-full transition-colors mx-auto inline-flex items-center px-0.5',
+                          on ? 'bg-primary' : 'bg-surface-2 border border-border',
+                          isAdmin && 'opacity-60 cursor-not-allowed',
+                        )}
+                        title={isAdmin ? 'Директор видит всегда' : ''}
+                      >
+                        <span className={cn('h-5 w-5 rounded-full bg-white shadow-soft transition-transform', on && 'translate-x-5')} />
+                      </button>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }

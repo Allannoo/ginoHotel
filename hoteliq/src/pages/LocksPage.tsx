@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import {
   KeyRound, Wifi, WifiOff, BatteryLow, Send, RotateCcw, Smartphone,
-  ShieldAlert, CheckCircle2, AlertCircle, MessageSquare, Mail,
+  ShieldAlert, CheckCircle2, AlertCircle, MessageSquare, Mail, PlugZap, Copy, ExternalLink, Loader2,
 } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Select } from '@/components/ui/Input';
 import { useLocks } from '@/store/locks';
+import { useLockIntegrations, LOCK_PROVIDER_META, type LockProvider } from '@/store/lockIntegrations';
 import { useBookings } from '@/store/bookings';
 import { rooms, properties } from '@/mock/data';
 import { fmtDate, cn, fmtDateLong } from '@/utils/format';
@@ -227,6 +228,9 @@ export default function LocksPage() {
         onClose={() => setIssueModalOpen(false)}
         onIssue={(k) => { issueKey(k); push({ tone: 'success', title: 'Ключ выпущен и отправлен гостю' }); }}
       />
+
+      {/* Интеграции с провайдерами */}
+      <IntegrationsSection />
     </PageTransition>
   );
 }
@@ -304,5 +308,143 @@ function IssueKeyModal({ open, onClose, onIssue }: { open: boolean; onClose: () 
         <p className="text-[11px] text-text-muted inline-flex items-center gap-1"><Smartphone className="h-3 w-3" /> PIN сгенерируется автоматически и активируется в момент заезда.</p>
       </div>
     </Modal>
+  );
+}
+
+// =========================================================================
+// Интеграции с провайдерами замков (TTLock, Igloohome, Salto, Nuki)
+// =========================================================================
+function IntegrationsSection() {
+  const providers = useLockIntegrations((s) => s.providers);
+  const update = useLockIntegrations((s) => s.update);
+  const testConnection = useLockIntegrations((s) => s.testConnection);
+  const { push } = useToast();
+  const [testing, setTesting] = useState<LockProvider | null>(null);
+  const [reveal, setReveal] = useState<Record<LockProvider, boolean>>({ ttlock: false, igloohome: false, salto: false, nuki: false });
+
+  const onTest = async (p: LockProvider) => {
+    setTesting(p);
+    await testConnection(p);
+    setTesting(null);
+    const cfg = useLockIntegrations.getState().providers[p];
+    push({
+      tone: cfg.status === 'connected' ? 'success' : 'error',
+      title: cfg.status === 'connected' ? 'Соединение OK' : 'Ошибка соединения',
+      description: cfg.message,
+    });
+  };
+
+  const copy = (s: string) => {
+    navigator.clipboard?.writeText(s);
+    push({ tone: 'info', title: 'Скопировано' });
+  };
+
+  return (
+    <Card padding="md" className="mt-5">
+      <CardHeader
+        title="Интеграции с провайдерами замков"
+        subtitle="Подключите свой аккаунт TTLock / Igloohome / Salto / Nuki — мы будем создавать виртуальные ключи и слушать события напрямую."
+      />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {(Object.keys(LOCK_PROVIDER_META) as LockProvider[]).map((p) => {
+          const meta = LOCK_PROVIDER_META[p];
+          const cfg = providers[p];
+          return (
+            <Card key={p} padding="md" className="border border-border">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <PlugZap className="h-4 w-4 text-primary" />
+                    <p className="font-bold text-text">{meta.name}</p>
+                    {cfg.status === 'connected' && <Badge tone="success" dot>Подключено</Badge>}
+                    {cfg.status === 'error' && <Badge tone="error" dot>Ошибка</Badge>}
+                    {cfg.status === 'disconnected' && <Badge tone="neutral" dot>Не подключено</Badge>}
+                  </div>
+                  <p className="text-xs text-text-muted mt-1">{meta.descr}</p>
+                  <a href={meta.docs} target="_blank" rel="noreferrer" className="text-xs text-primary inline-flex items-center gap-1 mt-1">
+                    Документация API <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                <label className="flex items-center gap-2 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={cfg.enabled}
+                    onChange={(e) => update(p, { enabled: e.target.checked })}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  Активна
+                </label>
+              </div>
+              <div className="space-y-2">
+                <label className="block">
+                  <span className="text-[11px] uppercase font-bold text-text-muted">API key (Client ID)</span>
+                  <div className="flex gap-1">
+                    <input
+                      type={reveal[p] ? 'text' : 'password'}
+                      value={cfg.apiKey}
+                      onChange={(e) => update(p, { apiKey: e.target.value, status: 'disconnected' })}
+                      className="flex-1 mt-1 px-3 py-2 rounded-btn border border-border bg-surface text-sm font-mono"
+                      placeholder="например, tt_pk_..."
+                    />
+                    <button type="button" onClick={() => setReveal((r) => ({ ...r, [p]: !r[p] }))} className="px-2 mt-1 text-xs text-text-muted hover:text-text">
+                      {reveal[p] ? 'скрыть' : 'показать'}
+                    </button>
+                  </div>
+                </label>
+                <label className="block">
+                  <span className="text-[11px] uppercase font-bold text-text-muted">API secret</span>
+                  <input
+                    type={reveal[p] ? 'text' : 'password'}
+                    value={cfg.apiSecret}
+                    onChange={(e) => update(p, { apiSecret: e.target.value, status: 'disconnected' })}
+                    className="w-full mt-1 px-3 py-2 rounded-btn border border-border bg-surface text-sm font-mono"
+                    placeholder="секретный ключ"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[11px] uppercase font-bold text-text-muted">Account email (опц.)</span>
+                  <input
+                    type="email"
+                    value={cfg.accountEmail ?? ''}
+                    onChange={(e) => update(p, { accountEmail: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 rounded-btn border border-border bg-surface text-sm"
+                    placeholder="account@hotel.ru"
+                  />
+                </label>
+                <div>
+                  <span className="text-[11px] uppercase font-bold text-text-muted">Webhook URL (для провайдера)</span>
+                  <div className="flex gap-1 mt-1">
+                    <input
+                      type="text"
+                      value={cfg.webhookUrl}
+                      readOnly
+                      className="flex-1 px-3 py-2 rounded-btn border border-border bg-surface-2 text-xs font-mono text-text-muted"
+                    />
+                    <Button variant="ghost" size="sm" leftIcon={<Copy className="h-3 w-3" />} onClick={() => copy(cfg.webhookUrl)}>Копировать</Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <span className="text-[11px] text-text-muted">
+                    {cfg.lastSyncAt ? `Синхронизация: ${new Date(cfg.lastSyncAt).toLocaleString('ru')}` : 'Соединение не проверялось'}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => onTest(p)}
+                    disabled={testing === p}
+                    leftIcon={testing === p ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PlugZap className="h-3.5 w-3.5" />}
+                  >
+                    {testing === p ? 'Проверка…' : 'Проверить'}
+                  </Button>
+                </div>
+                {cfg.message && (
+                  <p className={cn('text-[11px]', cfg.status === 'connected' ? 'text-success' : 'text-error')}>{cfg.message}</p>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </Card>
   );
 }

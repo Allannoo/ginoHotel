@@ -1,5 +1,5 @@
 // CRM Гостей: таблица + drawer-карточка
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, Plus, MessageSquare, X, Mail, Phone, Award, AlertOctagon, FileText, UserSearch } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -21,11 +21,16 @@ const TIER_TONE: Record<LoyaltyTier, 'neutral' | 'primary' | 'gold' | 'success'>
 };
 const TIER_NEXT: Record<LoyaltyTier, number> = { Bronze: 500, Silver: 1500, Gold: 3500, Platinum: 5000 };
 
+const PAGE_SIZE = 30;
+
 export default function GuestsPage() {
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<'all' | 'vip' | 'blacklist'>('all');
   const [selected, setSelected] = useState<Guest | null>(null);
   const [msgFor, setMsgFor] = useState<Guest | null>(null);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => setPage(1), [tab, query]);
 
   const filtered = useMemo(() => {
     let arr = initial;
@@ -39,6 +44,13 @@ export default function GuestsPage() {
     }
     return arr;
   }, [query, tab]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const clamped = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => filtered.slice((clamped - 1) * PAGE_SIZE, clamped * PAGE_SIZE),
+    [filtered, clamped],
+  );
 
   return (
     <PageTransition>
@@ -83,7 +95,7 @@ export default function GuestsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((g) => (
+                {paged.map((g) => (
                   <tr key={g.id} className={cn(
                     'border-t border-border hover:bg-surface-2/60 cursor-pointer transition-colors',
                     g.blacklisted && 'opacity-60',
@@ -116,6 +128,22 @@ export default function GuestsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-surface-2/40">
+            <p className="text-xs text-text-muted">
+              Показано {(clamped - 1) * PAGE_SIZE + 1}–{Math.min(clamped * PAGE_SIZE, filtered.length)} из {filtered.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={clamped <= 1}>
+                ← Назад
+              </Button>
+              <span className="text-xs font-bold text-text">{clamped} / {totalPages}</span>
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={clamped >= totalPages}>
+                Вперёд →
+              </Button>
+            </div>
           </div>
         )}
       </Card>

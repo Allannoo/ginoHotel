@@ -4,7 +4,7 @@ import {
   LayoutDashboard, CalendarRange, Building2, Radio, Users,
   Wallet, ListChecks, Settings, ChevronsLeft, ChevronsRight,
   Sun, Moon, Sparkles, UserCog, LogOut,
-  TrendingUp, Receipt, UtensilsCrossed, KeyRound, FileCheck2,
+  TrendingUp, Receipt, UtensilsCrossed, KeyRound, FileCheck2, BarChart3,
 } from 'lucide-react';
 import { useUi } from '@/store/ui';
 import { useThemeStore } from '@/store/theme';
@@ -25,6 +25,7 @@ const nav: { to: string; icon: any; label: string; end?: boolean; perm: Permissi
   { to: '/roomservice', icon: UtensilsCrossed, label: 'Доставка в номер', perm: 'roomservice' },
   { to: '/locks', icon: KeyRound, label: 'Замки и ключи', perm: 'locks' },
   { to: '/mvd', icon: FileCheck2, label: 'Отчёты МВД', perm: 'mvd' },
+  { to: '/reports', icon: BarChart3, label: 'Отчёты / Аналитика', perm: 'reports' },
   { to: '/tasks', icon: ListChecks, label: 'Задачи', perm: 'tasks' },
   { to: '/team', icon: UserCog, label: 'Команда', perm: 'team' },
   { to: '/settings', icon: Settings, label: 'Настройки', perm: 'settings' },

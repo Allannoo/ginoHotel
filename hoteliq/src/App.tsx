@@ -23,6 +23,7 @@ const ExpensesPage = lazy(() => import('@/pages/ExpensesPage'));
 const RoomServicePage = lazy(() => import('@/pages/RoomServicePage'));
 const LocksPage = lazy(() => import('@/pages/LocksPage'));
 const MvdPage = lazy(() => import('@/pages/MvdPage'));
+const ReportsPage = lazy(() => import('@/pages/ReportsPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 // Каркас экрана при ленивой подгрузке страницы:
@@ -138,6 +139,7 @@ export default function App() {
             <Route path="/roomservice" element={<Protected perm="roomservice"><Suspense fallback={<PageLoader />}><RoomServicePage /></Suspense></Protected>} />
             <Route path="/locks" element={<Protected perm="locks"><Suspense fallback={<PageLoader />}><LocksPage /></Suspense></Protected>} />
             <Route path="/mvd" element={<Protected perm="mvd"><Suspense fallback={<PageLoader />}><MvdPage /></Suspense></Protected>} />
+            <Route path="/reports" element={<Protected perm="reports"><Suspense fallback={<PageLoader />}><ReportsPage /></Suspense></Protected>} />
             <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFoundPage /></Suspense>} />
           </Route>
         ) : (

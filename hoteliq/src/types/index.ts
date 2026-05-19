@@ -50,6 +50,15 @@ export type Channel =
   | 'avito'
   | 'direct';
 
+export interface BookingPayment {
+  id: string;
+  amount: number;
+  method: 'cash' | 'card' | 'transfer' | 'online';
+  at: string; // ISO datetime
+  refund?: boolean;
+  note?: string;
+}
+
 export interface Booking {
   id: string;
   roomId: string;
@@ -63,6 +72,17 @@ export interface Booking {
   guests: number;
   amount: number;
   notes?: string;
+  // Расширенные поля (необязательные)
+  checkInTime?: string;       // HH:mm
+  checkOutTime?: string;      // HH:mm
+  pricePerNight?: number;
+  commission?: number;        // комиссия площадки в ₽
+  deposit?: number;           // залог
+  payments?: BookingPayment[];
+  additionalPhone?: string;
+  attachments?: string[];     // dataURL или имена файлов
+  sendEmailConfirmation?: boolean;
+  onlineContractUrl?: string;
 }
 
 export type GuestTag = 'VIP' | 'Постоянный' | 'Новый' | 'ЧС' | 'Корпоративный';
@@ -158,7 +178,8 @@ export type PermissionKey =
   | 'expenses'
   | 'roomservice'
   | 'locks'
-  | 'mvd';
+  | 'mvd'
+  | 'reports';
 
 export interface User {
   id: string;
@@ -171,6 +192,9 @@ export interface User {
   ownerId?: string; // кто добавил пользователя
   permissions: PermissionKey[];
   createdAt?: string;
+  avatar?: string;  // data-URL загруженного аватара
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string;
 }
 
 // ============================================================

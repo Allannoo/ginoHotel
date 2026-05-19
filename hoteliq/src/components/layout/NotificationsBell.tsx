@@ -153,7 +153,7 @@ export function NotificationsBell() {
             <button onClick={clear} className="text-[11px] text-text-muted hover:text-error inline-flex items-center gap-1">
               <Trash2 className="h-3 w-3" /> Очистить
             </button>
-            <button onClick={() => { setOpen(false); navigate('/settings'); }} className="text-[11px] text-primary hover:underline">
+            <button onClick={() => { setOpen(false); navigate('/settings?tab=notif'); }} className="text-[11px] text-primary hover:underline">
               Настройки уведомлений →
             </button>
           </div>

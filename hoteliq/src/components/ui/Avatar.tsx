@@ -36,9 +36,23 @@ const sizeMap: Record<Size, string> = {
 };
 
 export function Avatar({
-  name, size = 'md', className, ring,
-}: { name: string; size?: Size; className?: string; ring?: boolean }) {
+  name, size = 'md', className, ring, src,
+}: { name: string; size?: Size; className?: string; ring?: boolean; src?: string }) {
   const g = GRADIENTS[hash(name) % GRADIENTS.length];
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        className={cn(
+          'shrink-0 rounded-full object-cover select-none shadow-soft',
+          sizeMap[size],
+          ring && 'ring-2 ring-bg',
+          className,
+        )}
+      />
+    );
+  }
   return (
     <div
       className={cn(
