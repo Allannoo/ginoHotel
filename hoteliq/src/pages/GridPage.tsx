@@ -38,6 +38,9 @@ const ZOOM_CELL: Record<Zoom, number> = { day: 220, week: 110, month: 42 };
 // Сколько дней рендерим в режиме (с запасом для горизонтального скролла)
 const ZOOM_DAYS: Record<Zoom, number> = { day: 30, week: 63, month: 120 };
 
+// Стабильная пустая ссылка для строк без броней (избегаем лишних ре-рендеров memo-компонента строки)
+const EMPTY_BOOKINGS: Booking[] = [];
+
 // Цветовая легенда тарифов (Завтрак / Без завтрака / Невозвратный / Всё включено)
 const TARIFF_META: Record<BookingTariff, { color: string; label: string; icon: typeof Coffee }> = {
   breakfast:        { color: '#10b981', label: 'Завтрак',        icon: Coffee },
@@ -61,23 +64,84 @@ function daysInMonth(year: number, monthIdx: number) {
   return new Date(year, monthIdx + 1, 0).getDate();
 }
 
-// ---------- Ячейка-дроп ----------
-function GridCell({
-  roomId, dateIso, cellW, rowH, onClick,
-}: { roomId: string; dateIso: string; cellW: number; rowH: number; onClick: () => void }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `cell:${roomId}:${dateIso}` });
+// ---------- Ячейка (фон, без droppable — drop детектится на уровне строки) ----------
+const GridCell = memo(function GridCell({
+  dateIso, cellW, rowH, onClick,
+}: { dateIso: string; cellW: number; rowH: number; onClick: () => void }) {
   const isWeekend = [0, 6].includes(new Date(dateIso).getDay());
   return (
     <div
-      ref={setNodeRef}
       onClick={onClick}
       style={{ width: cellW, height: rowH }}
       className={cn(
-        'border-r border-b border-border shrink-0 cursor-pointer transition-colors',
+        'border-r border-b border-border shrink-0 cursor-pointer',
         isWeekend && 'bg-surface-2/50',
-        isOver && 'bg-primary/20',
       )}
     />
+  );
+});
+
+// ---------- Строка-droppable: одна droppable-зона на весь номер ----------
+function RoomRow({
+  roomId, isOver, setNodeRef, children,
+}: { roomId: string; isOver: boolean; setNodeRef: (el: HTMLDivElement | null) => void; children: React.ReactNode }) {
+  return (
+    <div ref={setNodeRef} data-room-id={roomId} className={cn('relative flex', isOver && 'bg-primary/5')}>
+      {children}
+    </div>
+  );
+}
+
+function RoomRowDroppable(props: {
+  roomId: string;
+  cellW: number;
+  rowH: number;
+  dates: { iso: string; d: Date }[];
+  dateIndex: Map<string, number>;
+  bookings: Booking[];
+  zoom: Zoom;
+  selectedIds: Set<string>;
+  bookingH: number;
+  bookingTop: number;
+  onCellClick: (iso: string) => void;
+  onBookingClick: (b: Booking, e: React.MouseEvent) => void;
+}) {
+  const { roomId, cellW, rowH, dates, dateIndex, bookings, zoom, selectedIds, bookingH, bookingTop, onCellClick, onBookingClick } = props;
+  const { setNodeRef, isOver } = useDroppable({ id: `row:${roomId}` });
+  const lastIso = dates.length > 0 ? dates[dates.length - 1].iso : '';
+  const firstIso = dates.length > 0 ? dates[0].iso : '';
+  return (
+    <RoomRow roomId={roomId} isOver={isOver} setNodeRef={setNodeRef}>
+      {dates.map(({ iso }) => (
+        <GridCell key={iso} dateIso={iso} cellW={cellW} rowH={rowH} onClick={() => onCellClick(iso)} />
+      ))}
+      {bookings.map((b) => {
+        const exactIdx = dateIndex.get(b.checkIn);
+        let startIdx: number;
+        let length: number;
+        if (exactIdx !== undefined) {
+          startIdx = exactIdx;
+          length = daysBetween(b.checkIn, b.checkOut);
+        } else {
+          // Бронь выходит за пределы окна — обрезаем
+          if (b.checkOut < firstIso || b.checkIn > lastIso) return null;
+          const visibleStart = b.checkIn < firstIso ? 0 : (dateIndex.get(b.checkIn) ?? 0);
+          const endIdx = b.checkOut > lastIso ? dates.length : (dateIndex.get(b.checkOut) ?? dates.length);
+          if (endIdx <= visibleStart) return null;
+          startIdx = visibleStart;
+          length = endIdx - visibleStart;
+        }
+        return (
+          <BookingBlock
+            key={b.id} booking={b} zoom={zoom}
+            startIdx={startIdx} length={length} cellW={cellW}
+            blockH={bookingH} blockTop={bookingTop}
+            selected={selectedIds.has(b.id)}
+            onClick={(e) => onBookingClick(b, e)}
+          />
+        );
+      })}
+    </RoomRow>
   );
 }
 
@@ -215,6 +279,9 @@ export default function GridPage() {
     return { startDate: s, daysCount: total, viewLabel: `${MONTHS_NOM[m]} ${y}` };
   }, [zoom, focusDate]);
 
+  // Сегодняшняя дата в ISO — вычисляем один раз для всех ячеек шапки
+  const todayIso = useMemo(() => toIso(new Date()), []);
+
   // Список дат в видимом окне
   const dates = useMemo(() => {
     const arr: { iso: string; d: Date }[] = [];
@@ -224,6 +291,13 @@ export default function GridPage() {
     }
     return arr;
   }, [startDate, daysCount]);
+
+  // Индекс ISO → позиция в `dates`. O(1) поиск вместо findIndex для каждой брони.
+  const dateIndex = useMemo(() => {
+    const m = new Map<string, number>();
+    dates.forEach((x, i) => m.set(x.iso, i));
+    return m;
+  }, [dates]);
 
   // Отфильтрованные номера
   const visibleRooms = useMemo(() => {
@@ -259,24 +333,29 @@ export default function GridPage() {
     if (!e.over) return;
     const bookId = String(e.active.id).replace('book:', '');
     const overId = String(e.over.id);
-    if (!overId.startsWith('cell:')) return;
-    const [, newRoomId, newDate] = overId.split(':');
+    if (!overId.startsWith('row:')) return;
+    const newRoomId = overId.slice(4);
     const b = bookingList.find((x) => x.id === bookId);
     if (!b) return;
-    if (b.roomId === newRoomId && b.checkIn === newDate) return; // без изменений
+    // Сдвиг по дням = delta.x / ширина ячейки (округление к ближайшей ячейке)
+    const daysShift = Math.round((e.delta?.x || 0) / cellW);
+    const newCheckIn = new Date(b.checkIn);
+    newCheckIn.setDate(newCheckIn.getDate() + daysShift);
+    const newCheckInIso = toIso(newCheckIn);
+    if (b.roomId === newRoomId && b.checkIn === newCheckInIso) return; // без изменений
     undoStackRef.current.push({
       id: bookId,
       prev: { roomId: b.roomId, checkIn: b.checkIn, checkOut: b.checkOut },
     });
     if (undoStackRef.current.length > 30) undoStackRef.current.shift();
     const duration = daysBetween(b.checkIn, b.checkOut);
-    const newOut = new Date(newDate); newOut.setDate(newOut.getDate() + duration);
+    const newOut = new Date(newCheckIn); newOut.setDate(newOut.getDate() + duration);
     updateBooking(bookId, {
       roomId: newRoomId,
-      checkIn: newDate,
+      checkIn: newCheckInIso,
       checkOut: toIso(newOut),
     });
-    push({ tone: 'success', title: 'Бронь перемещена', description: `Новая дата: ${fmtDateShort(newDate)} · Ctrl+Z — отменить` });
+    push({ tone: 'success', title: 'Бронь перемещена', description: `Новая дата: ${fmtDateShort(newCheckInIso)} · Ctrl+Z — отменить` });
   };
 
   // Ctrl+Z — откатить последнее перемещение
@@ -373,7 +452,7 @@ export default function GridPage() {
   }, [zoomIn, zoomOut]);
 
   // Клик по брони с учётом Shift — мульти-выбор
-  const handleBookingClick = (b: Booking, ev: React.MouseEvent) => {
+  const handleBookingClick = useCallback((b: Booking, ev: React.MouseEvent) => {
     if (ev.shiftKey) {
       setSelectedIds((prev) => {
         const next = new Set(prev);
@@ -408,7 +487,7 @@ export default function GridPage() {
       setSelectedIds(new Set());
     }
     setSelected(b);
-  };
+  }, [lastSelectedId, visibleBookings, selectedIds]);
 
   // Действия над выделенными
   const bulkChangeStatus = (st: BookingStatus) => {
@@ -658,7 +737,7 @@ export default function GridPage() {
                   {/* Шапка с датами */}
                   <div className="flex sticky top-0 z-10 bg-surface border-b border-border">
                     {dates.map(({ iso, d }) => {
-                      const isToday = iso === toIso(new Date());
+                      const isToday = iso === todayIso;
                       const isWeekend = [0, 6].includes(d.getDay());
                       return (
                         <div
@@ -683,52 +762,21 @@ export default function GridPage() {
 
                   {/* Строки по номерам */}
                   {visibleRooms.map((r) => (
-                    <div key={r.id} className="relative flex">
-                      {/* Пустые ячейки */}
-                      {dates.map(({ iso }) => (
-                        <GridCell
-                          key={iso}
-                          roomId={r.id}
-                          dateIso={iso}
-                          cellW={cellW}
-                          rowH={rowH}
-                          onClick={() => setCreateCtx({ roomId: r.id, date: iso })}
-                        />
-                      ))}
-                      {/* Брони */}
-                      {(bookingsByRoom.get(r.id) || []).map((b) => {
-                        const startIdx = dates.findIndex((d) => d.iso === b.checkIn);
-                        if (startIdx < 0) {
-                          // Бронь начинается раньше видимого окна — рисуем от 0
-                          const visibleStart = Math.max(0, dates.findIndex((d) => d.iso >= b.checkIn));
-                          const visibleEnd = Math.min(dates.length, dates.findIndex((d) => d.iso >= b.checkOut));
-                          if (visibleEnd <= visibleStart) return null;
-                          return (
-                            <BookingBlock
-                              key={b.id} booking={b} zoom={zoom}
-                              startIdx={visibleStart}
-                              length={visibleEnd - visibleStart}
-                              cellW={cellW}
-                              blockH={bookingH}
-                              blockTop={bookingTop}
-                              selected={selectedIds.has(b.id)}
-                              onClick={(e) => handleBookingClick(b, e)}
-                            />
-                          );
-                        }
-                        const length = daysBetween(b.checkIn, b.checkOut);
-                        return (
-                          <BookingBlock
-                            key={b.id} booking={b} zoom={zoom}
-                            startIdx={startIdx} length={length} cellW={cellW}
-                            blockH={bookingH}
-                            blockTop={bookingTop}
-                            selected={selectedIds.has(b.id)}
-                            onClick={(e) => handleBookingClick(b, e)}
-                          />
-                        );
-                      })}
-                    </div>
+                    <RoomRowDroppable
+                      key={r.id}
+                      roomId={r.id}
+                      cellW={cellW}
+                      rowH={rowH}
+                      dates={dates}
+                      dateIndex={dateIndex}
+                      bookings={bookingsByRoom.get(r.id) || EMPTY_BOOKINGS}
+                      zoom={zoom}
+                      selectedIds={selectedIds}
+                      bookingH={bookingH}
+                      bookingTop={bookingTop}
+                      onCellClick={(iso) => setCreateCtx({ roomId: r.id, date: iso })}
+                      onBookingClick={handleBookingClick}
+                    />
                   ))}
                 </div>
               </div>
