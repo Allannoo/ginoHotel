@@ -360,12 +360,31 @@ export interface PricingRule {
   id: string;
   propertyId: string | 'all';
   name: string;
-  condition: 'occupancy-above' | 'occupancy-below' | 'days-ahead' | 'weekend' | 'event' | 'season';
-  threshold: number; // % или дни
+  condition:
+    | 'occupancy-above'
+    | 'occupancy-below'
+    | 'days-ahead'        // за N дней до заезда (раннее бронирование)
+    | 'last-minute'       // за 1-2 дня до заезда
+    | 'weekend'           // пт-сб-вс
+    | 'day-of-week'       // конкретные дни недели
+    | 'holiday'           // государственные праздники
+    | 'event'             // событие в городе
+    | 'season'            // высокий сезон
+    | 'long-stay'         // от N ночей
+    | 'short-stay'        // 1-2 ночи
+    | 'channel-specific'  // для конкретного канала
+    | 'competitor-cheaper'
+    | 'competitor-expensive'
+    | 'low-pace'          // отстаём от прошлого года
+    | 'high-pace';        // обгоняем прошлый год
+  threshold: number;            // %, дни, ночи — зависит от condition
   action: 'increase' | 'decrease' | 'set-fixed';
-  amount: number; // % или ₽
+  amount: number;               // % или ₽
   enabled: boolean;
   priority: number;
+  // Доп. параметры для отдельных условий
+  daysOfWeek?: number[];        // 0=вс…6=сб (для 'day-of-week')
+  channels?: string[];          // для 'channel-specific'
 }
 
 export interface PricingForecast {

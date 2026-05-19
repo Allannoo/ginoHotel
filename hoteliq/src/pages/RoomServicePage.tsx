@@ -10,7 +10,7 @@
 import { useState, useMemo } from 'react';
 import {
   UtensilsCrossed, QrCode, Star, Clock, Truck, ChefHat,
-  CheckCircle2, X, Smartphone, MapPin, Phone, BadgeCheck,
+  CheckCircle2, X, MapPin, Phone, BadgeCheck, Pencil, Trash2, Plus, Smartphone,
 } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -19,12 +19,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
 import { Modal } from '@/components/ui/Modal';
-import { Select } from '@/components/ui/Input';
-import { RESTAURANTS } from '@/mock/restaurants';
+import { Input, Select, Textarea } from '@/components/ui/Input';
+import { useRestaurants, MENU_CATEGORY_LABEL } from '@/store/restaurants';
 import { useRoomService, ORDER_STATUS_LABEL } from '@/store/roomservice';
 import { properties } from '@/mock/data';
 import { fmtMoney, cn } from '@/utils/format';
-import type { RoomOrderStatus } from '@/types';
+import type { RoomOrderStatus, Restaurant, RestaurantMenuItem } from '@/types';
 
 const STATUS_TONE: Record<RoomOrderStatus, 'neutral' | 'info' | 'warning' | 'primary' | 'success' | 'error'> = {
   new: 'info', accepted: 'primary', cooking: 'warning', delivering: 'primary',
@@ -45,10 +45,12 @@ const NEXT_STATUS: Partial<Record<RoomOrderStatus, RoomOrderStatus>> = {
 
 export default function RoomServicePage() {
   const { orders, enabledByProperty, toggleRestaurant, setStatus } = useRoomService();
+  const restaurants = useRestaurants((s) => s.restaurants);
   const hotels = properties.filter((p) => p.type === 'hotel');
   const [activeHotel, setActiveHotel] = useState<string>(hotels[0]?.id ?? '');
   const [view, setView] = useState<'catalog' | 'orders' | 'preview'>('catalog');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
 
   const enabledIds = enabledByProperty[activeHotel] ?? [];
 
@@ -124,10 +126,15 @@ export default function RoomServicePage() {
 
       {view === 'catalog' && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {RESTAURANTS.map((r) => {
+          {restaurants.map((r) => {
             const enabled = enabledIds.includes(r.id);
             return (
-              <Card key={r.id} padding="md" className={cn(enabled && 'ring-1 ring-primary/40')}>
+              <Card
+                key={r.id}
+                padding="md"
+                className={cn('cursor-pointer hover:shadow-lg transition-shadow', enabled && 'ring-1 ring-primary/40')}
+                onClick={() => setMenuOpenFor(r.id)}
+              >
                 <div className="flex items-start gap-3 mb-3">
                   <div className="h-14 w-14 rounded-card bg-gradient-to-br from-primary/10 to-gold/10 flex items-center justify-center text-3xl shrink-0">
                     {r.cover}
@@ -146,7 +153,9 @@ export default function RoomServicePage() {
                       {r.cuisine.map((c) => <Badge key={c} tone="neutral" className="!text-[10px]">{c}</Badge>)}
                     </div>
                   </div>
-                  <Switch checked={enabled} onChange={() => toggleRestaurant(activeHotel, r.id)} />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Switch checked={enabled} onChange={() => toggleRestaurant(activeHotel, r.id)} />
+                  </div>
                 </div>
                 <p className="text-[12px] text-text-muted mb-3 line-clamp-2">{r.description}</p>
                 <div className="grid grid-cols-3 gap-2 text-center text-[11px] py-2 border-y border-border">
@@ -163,10 +172,11 @@ export default function RoomServicePage() {
                     <p className="font-bold text-text mt-1">{r.menu.length} блюд</p>
                   </div>
                 </div>
-                <div className="text-[11px] text-text-muted mt-2 flex items-center gap-2">
-                  <MapPin className="h-3 w-3" /> {r.address}
-                  <span>·</span>
-                  <Phone className="h-3 w-3" /> {r.phone}
+                <div className="flex items-center justify-between mt-2">
+                  <div className="text-[11px] text-text-muted flex items-center gap-2">
+                    <MapPin className="h-3 w-3" /> {r.address}
+                  </div>
+                  <span className="text-[11px] text-primary font-bold">Открыть меню →</span>
                 </div>
               </Card>
             );
@@ -217,6 +227,10 @@ export default function RoomServicePage() {
       )}
 
       <GuestPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} hotelId={activeHotel} enabledIds={enabledIds} />
+      <RestaurantMenuModal
+        restaurantId={menuOpenFor}
+        onClose={() => setMenuOpenFor(null)}
+      />
     </PageTransition>
   );
 }
@@ -234,7 +248,8 @@ function KpiCard({ label, value, accent }: { label: string; value: string | numb
 // ===== Превью гостевого меню — телефон-мокап =====
 function GuestPreviewModal({ open, onClose, hotelId, enabledIds }: { open: boolean; onClose: () => void; hotelId: string; enabledIds: string[] }) {
   const hotel = properties.find((p) => p.id === hotelId);
-  const cafes = RESTAURANTS.filter((r) => enabledIds.includes(r.id));
+  const restaurants = useRestaurants((s) => s.restaurants);
+  const cafes = restaurants.filter((r) => enabledIds.includes(r.id));
 
   return (
     <Modal open={open} onClose={onClose} title="Так это видит гость" subtitle="Мобильное меню по QR-коду в номере" size="md">
@@ -307,6 +322,163 @@ function GuestPreviewModal({ open, onClose, hotelId, enabledIds }: { open: boole
             <code className="font-mono bg-surface-2 px-2 py-0.5 rounded">gino.menu/{hotelId}</code>
           </p>
         </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ============================================================
+// Модалка меню кафе — добавление / редактирование / удаление блюд
+// ============================================================
+const CATEGORY_ORDER: RestaurantMenuItem['category'][] = ['pie', 'starter', 'soup', 'main', 'dessert', 'drink'];
+
+function RestaurantMenuModal({ restaurantId, onClose }: { restaurantId: string | null; onClose: () => void }) {
+  const restaurants = useRestaurants((s) => s.restaurants);
+  const addMenuItem = useRestaurants((s) => s.addMenuItem);
+  const updateMenuItem = useRestaurants((s) => s.updateMenuItem);
+  const removeMenuItem = useRestaurants((s) => s.removeMenuItem);
+  const restaurant = restaurants.find((r) => r.id === restaurantId) ?? null;
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<RestaurantMenuItem>({
+    id: '', name: '', description: '', price: 0, category: 'main', emoji: '🍽️',
+  });
+
+  const startAdd = () => {
+    setEditingId('__new__');
+    setDraft({ id: `m-${Date.now()}`, name: '', description: '', price: 0, category: 'main', emoji: '🍽️' });
+  };
+  const startEdit = (m: RestaurantMenuItem) => {
+    setEditingId(m.id);
+    setDraft({ ...m });
+  };
+  const cancel = () => { setEditingId(null); };
+  const save = () => {
+    if (!restaurant || !draft.name.trim() || draft.price <= 0) return;
+    if (editingId === '__new__') addMenuItem(restaurant.id, draft);
+    else if (editingId) updateMenuItem(restaurant.id, editingId, draft);
+    setEditingId(null);
+  };
+  const handleClose = () => { setEditingId(null); onClose(); };
+
+  if (!restaurant) return null;
+
+  const grouped = CATEGORY_ORDER
+    .map((cat) => ({ cat, items: restaurant.menu.filter((m) => m.category === cat) }))
+    .filter((g) => g.items.length > 0);
+
+  return (
+    <Modal
+      open={!!restaurantId}
+      onClose={handleClose}
+      title={`${restaurant.cover} ${restaurant.name} — меню`}
+      subtitle={`${restaurant.menu.length} блюд · мин. заказ ${fmtMoney(restaurant.minOrder)} · доставка ${fmtMoney(restaurant.deliveryFee)}`}
+      size="lg"
+    >
+      <div className="space-y-4">
+        {/* Шапка с кнопкой добавления */}
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
+          <p className="text-xs text-text-muted">
+            Изменения сохраняются локально и применяются и в админке, и в превью гостя.
+          </p>
+          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={startAdd} disabled={!!editingId}>
+            Добавить блюдо
+          </Button>
+        </div>
+
+        {/* Форма редактирования / добавления */}
+        {editingId && (
+          <div className="rounded-card border-2 border-primary/40 bg-primary/5 p-4 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="md:col-span-2">
+                <label className="text-[11px] font-bold text-text-muted">Название</label>
+                <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Например: Осетинский пирог с сыром" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-text-muted">Эмодзи</label>
+                <Input value={draft.emoji ?? ''} onChange={(e) => setDraft({ ...draft, emoji: e.target.value })} maxLength={4} />
+              </div>
+              <div className="md:col-span-3">
+                <label className="text-[11px] font-bold text-text-muted">Описание</label>
+                <Textarea
+                  value={draft.description ?? ''}
+                  onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                  rows={2}
+                  placeholder="Состав, особенности, граммовка…"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-text-muted">Категория</label>
+                <Select
+                  value={draft.category}
+                  onChange={(e) => setDraft({ ...draft, category: e.target.value as RestaurantMenuItem['category'] })}
+                  options={CATEGORY_ORDER.map((c) => ({ value: c, label: MENU_CATEGORY_LABEL[c] }))}
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold text-text-muted">Цена, ₽</label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={draft.price}
+                  onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <Button variant="ghost" size="sm" onClick={cancel}>Отмена</Button>
+              <Button size="sm" onClick={save} disabled={!draft.name.trim() || draft.price <= 0}>
+                {editingId === '__new__' ? 'Добавить' : 'Сохранить'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Список по категориям */}
+        {grouped.length === 0 && (
+          <div className="text-center py-10 text-sm text-text-muted">
+            Меню пусто. Нажмите «Добавить блюдо», чтобы заполнить.
+          </div>
+        )}
+        {grouped.map((g) => (
+          <div key={g.cat}>
+            <h4 className="text-[11px] uppercase font-bold text-text-muted mb-2 pb-1 border-b border-border">
+              {MENU_CATEGORY_LABEL[g.cat]} · {g.items.length}
+            </h4>
+            <div className="space-y-1.5">
+              {g.items.map((m) => (
+                <div key={m.id} className="group flex items-start gap-3 px-2.5 py-2 rounded-btn hover:bg-surface-2/50 transition">
+                  <div className="text-xl shrink-0">{m.emoji}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2">
+                      <p className="font-bold text-sm text-text truncate">{m.name}</p>
+                      <span className="text-xs font-bold text-primary shrink-0 ml-auto">{fmtMoney(m.price)}</span>
+                    </div>
+                    {m.description && <p className="text-[11px] text-text-muted leading-snug mt-0.5">{m.description}</p>}
+                  </div>
+                  <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <button
+                      onClick={() => startEdit(m)}
+                      className="h-7 w-7 rounded-btn hover:bg-surface flex items-center justify-center"
+                      title="Редактировать"
+                      disabled={!!editingId}
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-text-muted" />
+                    </button>
+                    <button
+                      onClick={() => removeMenuItem(restaurant.id, m.id)}
+                      className="h-7 w-7 rounded-btn hover:bg-error/10 flex items-center justify-center"
+                      title="Удалить"
+                      disabled={!!editingId}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-error" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </Modal>
   );

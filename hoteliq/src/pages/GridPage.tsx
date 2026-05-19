@@ -1,5 +1,6 @@
 // Календарь броней: timeline номера × дни + drag&drop (с persist)
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   DndContext, useDraggable, useDroppable, type DragEndEvent, PointerSensor, useSensor, useSensors,
 } from '@dnd-kit/core';
@@ -128,6 +129,19 @@ export default function GridPage() {
   const [selected, setSelected] = useState<Booking | null>(null);
   const [createCtx, setCreateCtx] = useState<{ roomId: string; date: string } | null>(null);
   const { push } = useToast();
+
+  // Реакция на ?new=1 в URL — открыть форму "Новая бронь" с дефолтным номером и сегодняшней датой
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      const firstRoom = rooms[0];
+      if (firstRoom) setCreateCtx({ roomId: firstRoom.id, date: toIso(new Date()) });
+      const next = new URLSearchParams(searchParams);
+      next.delete('new');
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 

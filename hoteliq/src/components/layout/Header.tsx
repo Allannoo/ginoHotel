@@ -1,10 +1,13 @@
-import { Bell, Menu, Search, Plus } from 'lucide-react';
+import { Menu, Search, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useUi } from '@/store/ui';
 import { Button } from '@/components/ui/Button';
+import { NotificationsBell } from '@/components/layout/NotificationsBell';
 import { useEffect } from 'react';
 
 export function Header() {
   const { setMobileDrawer, setCmdk } = useUi();
+  const navigate = useNavigate();
 
   // Горячая клавиша Cmd/Ctrl+K
   useEffect(() => {
@@ -38,14 +41,16 @@ export function Header() {
       </button>
 
       <div className="ml-auto flex items-center gap-2">
-        <Button size="md" leftIcon={<Plus className="h-4 w-4" />} className="hidden sm:inline-flex">
+        <Button
+          size="md"
+          leftIcon={<Plus className="h-4 w-4" />}
+          className="hidden sm:inline-flex"
+          onClick={() => navigate('/grid?new=1')}
+        >
           Новая бронь
         </Button>
 
-        <button className="relative h-10 w-10 rounded-btn hover:bg-surface-2 flex items-center justify-center text-text-muted">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-error ring-2 ring-bg" />
-        </button>
+        <NotificationsBell />
 
         <button className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-gold text-white font-bold text-sm flex items-center justify-center shadow-soft">
           АС

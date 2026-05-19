@@ -1,6 +1,6 @@
 // Страница: Отчёты в МВД (eFMS / уведомление о прибытии иностранца)
 // Дедлайн 24 часа от заезда. Форма прибытия по форме №7, форма убытия.
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   FileCheck2, Globe2, AlertTriangle, Send, CheckCircle2, FileText,
   Clock, Download, X, ShieldCheck,
@@ -34,6 +34,8 @@ export default function MvdPage() {
   const { push } = useToast();
   const [filter, setFilter] = useState<'all' | MvdReportStatus | 'no-report'>('all');
   const [preview, setPreview] = useState<MvdReport | null>(null);
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
 
   // Гости-иностранцы среди активных и предстоящих броней
   const foreignBookings = useMemo(() => {
@@ -70,6 +72,16 @@ export default function MvdPage() {
     if (filter === 'no-report') return allItems.filter((x) => !x.report);
     return allItems.filter((x) => x.report?.status === filter);
   }, [allItems, filter]);
+
+  // Сброс страницы при смене фильтра
+  useEffect(() => { setPage(1); }, [filter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const clampedPage = Math.min(page, totalPages);
+  const paged = useMemo(
+    () => filtered.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE),
+    [filtered, clampedPage]
+  );
 
   const stats = {
     total: allItems.length,
@@ -184,7 +196,7 @@ export default function MvdPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((it) => {
+              {paged.map((it) => {
                 const hLeft = hoursUntil(it.deadline);
                 const overdue = !it.report && hLeft < 0;
                 return (
@@ -238,6 +250,21 @@ export default function MvdPage() {
             </tbody>
           </table>
         </div>
+        {/* Пагинация */}
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-border text-xs">
+            <span className="text-text-muted">
+              Показано {(clampedPage - 1) * PAGE_SIZE + 1}–{Math.min(clampedPage * PAGE_SIZE, filtered.length)} из {filtered.length}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button size="sm" variant="ghost" onClick={() => setPage(1)} disabled={clampedPage === 1}>«</Button>
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={clampedPage === 1}>‹ Назад</Button>
+              <span className="px-2 font-bold text-text">{clampedPage} / {totalPages}</span>
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={clampedPage === totalPages}>Вперёд ›</Button>
+              <Button size="sm" variant="ghost" onClick={() => setPage(totalPages)} disabled={clampedPage === totalPages}>»</Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       <ReportPreviewModal report={preview} onClose={() => setPreview(null)} onRemove={removeReport} />

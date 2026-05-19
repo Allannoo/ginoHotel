@@ -13,16 +13,18 @@ function seeded(seed: number) {
   };
 }
 
-/** Сгенерировать прогноз на 365 дней для всех отелей */
+/** Сгенерировать прогноз на 365 дней для всех объектов (отели + апартаменты) */
 function makeForecast(): PricingForecast[] {
   const out: PricingForecast[] = [];
-  const hotels = seedProperties.filter((p) => p.type === 'hotel');
+  const items = seedProperties; // все объекты: отели + апартаменты
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  for (const p of hotels) {
+  for (const p of items) {
     const rnd = seeded(p.id.length * 131 + p.rooms);
-    const basePrice = 4500 + (p.id.charCodeAt(p.id.length - 1) % 10) * 700;
+    // Для апартаментов база ниже — это короткий съём
+    const baseFactor = p.type === 'hotel' ? 1 : 0.55;
+    const basePrice = Math.round((4500 + (p.id.charCodeAt(p.id.length - 1) % 10) * 700) * baseFactor);
     for (let d = 0; d < 365; d++) {
       const date = new Date(today);
       date.setDate(date.getDate() + d);
