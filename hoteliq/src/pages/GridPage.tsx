@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import {
   DndContext, useDraggable, useDroppable, type DragEndEvent, PointerSensor, useSensor, useSensors,
 } from '@dnd-kit/core';
-import { ChevronLeft, ChevronRight, Plus, FileText, Upload, BadgeCheck, CalendarDays, Undo2, Check, X, Coffee, Ban, Sparkles, Mail, Download, Info as InfoIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, FileText, Upload, BadgeCheck, CalendarDays, Undo2, Check, X, Coffee, Ban, Sparkles, Mail, Download, Info as InfoIcon, ZoomIn, ZoomOut } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -63,17 +63,17 @@ function daysInMonth(year: number, monthIdx: number) {
 
 // ---------- Ячейка-дроп ----------
 function GridCell({
-  roomId, dateIso, cellW, onClick,
-}: { roomId: string; dateIso: string; cellW: number; onClick: () => void }) {
+  roomId, dateIso, cellW, rowH, onClick,
+}: { roomId: string; dateIso: string; cellW: number; rowH: number; onClick: () => void }) {
   const { setNodeRef, isOver } = useDroppable({ id: `cell:${roomId}:${dateIso}` });
   const isWeekend = [0, 6].includes(new Date(dateIso).getDay());
   return (
     <div
       ref={setNodeRef}
       onClick={onClick}
-      style={{ width: cellW }}
+      style={{ width: cellW, height: rowH }}
       className={cn(
-        'h-12 border-r border-b border-border shrink-0 cursor-pointer transition-colors',
+        'border-r border-b border-border shrink-0 cursor-pointer transition-colors',
         isWeekend && 'bg-surface-2/50',
         isOver && 'bg-primary/20',
       )}
@@ -83,8 +83,8 @@ function GridCell({
 
 // ---------- Бронь (draggable) ----------
 const BookingBlock = memo(function BookingBlock({
-  booking, startIdx, length, cellW, onClick, zoom, selected,
-}: { booking: Booking; startIdx: number; length: number; cellW: number; onClick: (e: React.MouseEvent) => void; zoom: Zoom; selected?: boolean; }) {
+  booking, startIdx, length, cellW, onClick, zoom, selected, blockH, blockTop,
+}: { booking: Booking; startIdx: number; length: number; cellW: number; onClick: (e: React.MouseEvent) => void; zoom: Zoom; selected?: boolean; blockH: number; blockTop: number; }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `book:${booking.id}`,
     data: { booking },
@@ -103,8 +103,8 @@ const BookingBlock = memo(function BookingBlock({
         position: 'absolute',
         left: left + 2,
         width,
-        top: 4,
-        height: 40,
+        top: blockTop,
+        height: blockH,
         transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${isDragging ? 1.02 : 1})` : undefined,
         opacity: isDragging ? 0.8 : 1,
         zIndex: isDragging ? 50 : 1,
@@ -135,6 +135,20 @@ const BookingBlock = memo(function BookingBlock({
 export default function GridPage() {
   // Режим отображения и фокусная дата — оба определяют видимый диапазон.
   const [zoom, setZoom] = useState<Zoom>('week');
+  // Множитель масштаба (лупа +/-). Сохраняется в localStorage.
+  const [zoomScale, setZoomScale] = useState<number>(() => {
+    if (typeof window === 'undefined') return 1;
+    const v = parseFloat(window.localStorage.getItem('grid:zoomScale') || '1');
+    return Number.isFinite(v) && v >= 0.6 && v <= 2 ? v : 1;
+  });
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('grid:zoomScale', String(zoomScale));
+    }
+  }, [zoomScale]);
+  const zoomIn = useCallback(() => setZoomScale((s) => Math.min(2, +(s + 0.1).toFixed(2))), []);
+  const zoomOut = useCallback(() => setZoomScale((s) => Math.max(0.6, +(s - 0.1).toFixed(2))), []);
+  const zoomReset = useCallback(() => setZoomScale(1), []);
   const [focusDate, setFocusDate] = useState<Date>(() => atMidnight(new Date()));
   const [pickerOpen, setPickerOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
@@ -173,7 +187,11 @@ export default function GridPage() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  const cellW = ZOOM_CELL[zoom];
+  const cellW = Math.round(ZOOM_CELL[zoom] * zoomScale);
+  const rowH = Math.round(48 * zoomScale);
+  const leftColW = Math.round(200 * zoomScale);
+  const bookingH = Math.round(40 * zoomScale);
+  const bookingTop = Math.max(2, Math.round(4 * zoomScale));
 
   // Вычисляем видимый диапазон исходя из режима и фокусной даты.
   // Окно даём с запасом (см. ZOOM_DAYS) — пользователь скроллит горизонтально вперёд.
@@ -280,13 +298,22 @@ export default function GridPage() {
       if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'я' || ev.key === 'Я')) {
         ev.preventDefault();
         undoLastMove();
+      } else if ((ev.ctrlKey || ev.metaKey) && (ev.key === '=' || ev.key === '+')) {
+        ev.preventDefault();
+        zoomIn();
+      } else if ((ev.ctrlKey || ev.metaKey) && ev.key === '-') {
+        ev.preventDefault();
+        zoomOut();
+      } else if ((ev.ctrlKey || ev.metaKey) && ev.key === '0') {
+        ev.preventDefault();
+        zoomReset();
       } else if (ev.key === 'Escape') {
         setSelectedIds(new Set());
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [undoLastMove]);
+  }, [undoLastMove, zoomIn, zoomOut, zoomReset]);
 
   // ПКМ drag-to-scroll по сетке. ЛКМ оставлена для броней (dnd-kit) и кликов.
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -331,6 +358,19 @@ export default function GridPage() {
       el.removeEventListener('contextmenu', onContextMenu);
     };
   }, []);
+
+  // Ctrl + колесо мыши — изменение масштаба
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onWheel = (ev: WheelEvent) => {
+      if (!(ev.ctrlKey || ev.metaKey)) return;
+      ev.preventDefault();
+      if (ev.deltaY < 0) zoomIn(); else if (ev.deltaY > 0) zoomOut();
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [zoomIn, zoomOut]);
 
   // Клик по брони с учётом Shift — мульти-выбор
   const handleBookingClick = (b: Booking, ev: React.MouseEvent) => {
@@ -539,6 +579,35 @@ export default function GridPage() {
                   </button>
                 ))}
               </div>
+
+              {/* Лупа: масштаб ячеек и строк (сохраняется в localStorage) */}
+              <div className="flex items-center gap-0.5 bg-surface-2 rounded-btn p-1" data-no-pan="true">
+                <button
+                  onClick={zoomOut}
+                  disabled={zoomScale <= 0.6}
+                  className="px-1.5 h-7 rounded-md text-text-muted hover:text-text hover:bg-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Уменьшить (Ctrl+−)"
+                  aria-label="Уменьшить масштаб"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={zoomReset}
+                  className="px-2 h-7 rounded-md text-[11px] font-bold tabular-nums text-text-muted hover:text-text hover:bg-bg transition-colors min-w-[44px]"
+                  title="Сбросить масштаб (Ctrl+0)"
+                >
+                  {Math.round(zoomScale * 100)}%
+                </button>
+                <button
+                  onClick={zoomIn}
+                  disabled={zoomScale >= 2}
+                  className="px-1.5 h-7 rounded-md text-text-muted hover:text-text hover:bg-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  title="Увеличить (Ctrl++)"
+                  aria-label="Увеличить масштаб"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -570,13 +639,13 @@ export default function GridPage() {
               <div className="flex">
                 {/* Левая колонка — номера */}
                 <div className="sticky left-0 z-20 bg-surface border-r border-border">
-                  <div className="h-12 border-b border-border flex items-center px-4 font-bold text-xs uppercase text-text-muted">
+                  <div className="border-b border-border flex items-center px-4 font-bold text-xs uppercase text-text-muted" style={{ height: rowH, width: leftColW }}>
                     Номер
                   </div>
                   {visibleRooms.map((r) => {
                     const prop = properties.find((p) => p.id === r.propertyId);
                     return (
-                      <div key={r.id} className="h-12 border-b border-border px-4 flex flex-col justify-center" style={{ width: 200 }}>
+                      <div key={r.id} className="border-b border-border px-4 flex flex-col justify-center" style={{ width: leftColW, height: rowH }}>
                         <p className="text-sm font-bold text-text leading-none">№ {r.number} · {ROOM_CATEGORY_LABEL[r.category]}</p>
                         <p className="text-[10px] text-text-muted truncate mt-0.5">{prop?.name}</p>
                       </div>
@@ -594,9 +663,9 @@ export default function GridPage() {
                       return (
                         <div
                           key={iso}
-                          style={{ width: cellW }}
+                          style={{ width: cellW, height: rowH }}
                           className={cn(
-                            'h-12 border-r border-border flex flex-col items-center justify-center shrink-0',
+                            'border-r border-border flex flex-col items-center justify-center shrink-0',
                             isWeekend && 'bg-surface-2/60',
                             isToday && 'bg-primary/10',
                           )}
@@ -622,6 +691,7 @@ export default function GridPage() {
                           roomId={r.id}
                           dateIso={iso}
                           cellW={cellW}
+                          rowH={rowH}
                           onClick={() => setCreateCtx({ roomId: r.id, date: iso })}
                         />
                       ))}
@@ -639,6 +709,8 @@ export default function GridPage() {
                               startIdx={visibleStart}
                               length={visibleEnd - visibleStart}
                               cellW={cellW}
+                              blockH={bookingH}
+                              blockTop={bookingTop}
                               selected={selectedIds.has(b.id)}
                               onClick={(e) => handleBookingClick(b, e)}
                             />
@@ -649,6 +721,8 @@ export default function GridPage() {
                           <BookingBlock
                             key={b.id} booking={b} zoom={zoom}
                             startIdx={startIdx} length={length} cellW={cellW}
+                            blockH={bookingH}
+                            blockTop={bookingTop}
                             selected={selectedIds.has(b.id)}
                             onClick={(e) => handleBookingClick(b, e)}
                           />
