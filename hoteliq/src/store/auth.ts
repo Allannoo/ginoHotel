@@ -141,9 +141,31 @@ export const useAuth = create<AuthState>()(
   ),
 );
 
-// Хелпер: текущий пользователь
+// ===================== Импersonation (просмотр от лица другой роли) =====================
+// Используется в шапке: «Смотреть как директор / менеджер / ресепшен / уборка».
+// Это ВРЕМЕННЫЙ предпросмотр, который меняет только то, что видит интерфейс — все правки
+// остаются от настоящего пользователя. Сбрасывается при перезагрузке.
+type ImpersonationState = {
+  role: UserRole | null;
+  setRole: (r: UserRole | null) => void;
+};
+export const useImpersonation = create<ImpersonationState>((set) => ({
+  role: null,
+  setRole: (role) => set({ role }),
+}));
+
+// Хелпер: текущий пользователь (с учётом просмотра от лица другой роли)
 export function useCurrentUser(): User | null {
-  return useAuth((s) => s.team.find((u) => u.id === s.currentUserId) ?? null);
+  const base = useAuth((s) => s.team.find((u) => u.id === s.currentUserId) ?? null);
+  const imp = useImpersonation((s) => s.role);
+  if (!base) return null;
+  if (!imp || imp === base.role) return base;
+  // Подменяем роль и подсчитываем доступы по дефолту для этой роли
+  return {
+    ...base,
+    role: imp,
+    permissions: imp === 'admin' ? [...ALL_PERMISSIONS] : [...DEFAULT_ROLE_PERMISSIONS[imp]],
+  };
 }
 
 // Хелпер проверки прав

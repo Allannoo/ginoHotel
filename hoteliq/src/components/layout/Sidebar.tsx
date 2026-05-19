@@ -123,7 +123,7 @@ export function Sidebar() {
               'flex items-center gap-2.5 p-2 rounded-card border border-border bg-bg',
               collapsed && 'lg:justify-center lg:p-1.5',
             )}>
-              <Avatar name={currentUser.name} size="sm" />
+              <Avatar name={currentUser.name} src={currentUser.avatar} size="sm" />
               {!collapsed && (
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold text-text truncate leading-none">{currentUser.name}</p>

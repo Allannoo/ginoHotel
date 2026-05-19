@@ -83,7 +83,10 @@ export interface Booking {
   attachments?: string[];     // dataURL или имена файлов
   sendEmailConfirmation?: boolean;
   onlineContractUrl?: string;
+  tariff?: BookingTariff;
 }
+
+export type BookingTariff = 'breakfast' | 'no-breakfast' | 'non-refundable' | 'all-inclusive';
 
 export type GuestTag = 'VIP' | 'Постоянный' | 'Новый' | 'ЧС' | 'Корпоративный';
 export type LoyaltyTier = 'Bronze' | 'Silver' | 'Gold' | 'Platinum';

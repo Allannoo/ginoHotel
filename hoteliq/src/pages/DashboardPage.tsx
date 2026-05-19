@@ -1,12 +1,15 @@
 // Страница «Дашборд» — главная
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, PieChart, Pie, Cell, Area, AreaChart,
+  BarChart, Bar,
 } from 'recharts';
 import {
   TrendingUp, Wallet, BedDouble, Activity, Users, CalendarCheck,
   Sparkles, AlertTriangle, AlertCircle, Info, ArrowUpRight, ArrowDownRight, Target,
+  LogIn, LogOut, ClipboardList, KeyRound, Sparkle, Percent, PiggyBank,
 } from 'lucide-react';
 import { PageTransition, StaggerList, staggerItem } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -15,19 +18,22 @@ import { Badge } from '@/components/ui/Badge';
 import { CountUp } from '@/components/ui/CountUp';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
+import { Modal } from '@/components/ui/Modal';
 import {
-  kpiToday, bookingTrend, channelDistribution, aiInsights, alerts, upcomingCheckins,
+  kpiToday, bookingTrend, channelDistribution, aiInsights, alerts, upcomingCheckins, bookings, rooms,
 } from '@/mock/data';
-import { fmtDateShort } from '@/utils/format';
+import { fmtDateShort, fmtMoney } from '@/utils/format';
 import { cn } from '@/utils/format';
+import { useCurrentUser } from '@/store/auth';
 
 // ---------- KPI карточка ----------
 function KpiCard({
-  icon, label, value, format, delta, tone = 'primary',
+  icon, label, value, format, delta, tone = 'primary', onClick,
 }: {
   icon: React.ReactNode; label: string; value: number;
   format: 'number' | 'money' | 'percent' | 'compact-money';
   delta: number; tone?: 'primary' | 'success' | 'gold' | 'info';
+  onClick?: () => void;
 }) {
   const positive = delta >= 0;
   const toneBg = {
@@ -38,7 +44,7 @@ function KpiCard({
   }[tone];
   return (
     <motion.div variants={staggerItem}>
-      <Card hoverable>
+      <Card hoverable onClick={onClick}>
         <div className="flex items-start justify-between mb-3">
           <div className={cn('h-10 w-10 rounded-btn flex items-center justify-center', toneBg)}>
             {icon}
@@ -52,6 +58,7 @@ function KpiCard({
         <p className="font-display text-3xl text-text mt-1">
           <CountUp value={value} format={format} />
         </p>
+        {onClick && <p className="text-[10px] text-primary mt-2 font-semibold">Подробнее →</p>}
       </Card>
     </motion.div>
   );
@@ -73,11 +80,39 @@ function ChartTooltip({ active, payload, label }: any) {
 }
 
 export default function DashboardPage() {
+  const user = useCurrentUser();
+  const role = user?.role ?? 'admin';
+  const isReception = role === 'reception';
+  const isManagerial = role === 'admin' || role === 'manager';
+  const [drillKey, setDrillKey] = useState<null | 'revenue' | 'occupancy' | 'adr' | 'revpar' | 'bookings' | 'guests' | 'checkin' | 'checkout' | 'free' | 'tasks' | 'margin'>(null);
+
+  // Метрики для ресепшен — вычисляем из mock
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const checkInToday = bookings.filter((b) => {
+    const d = new Date(b.checkIn); d.setHours(0, 0, 0, 0);
+    return d.getTime() === today.getTime();
+  }).length;
+  const checkOutToday = bookings.filter((b) => {
+    const d = new Date(b.checkOut); d.setHours(0, 0, 0, 0);
+    return d.getTime() === today.getTime();
+  }).length;
+  const freeRooms = rooms.filter((r) => r.status === 'clean').length;
+  const pendingHousekeeping = rooms.filter((r) => r.status === 'dirty' || r.status === 'inspection').length;
+
+  // Метрики для директора: маржа (мок)
+  const margin = 38; // %
+  const monthRevenue = kpiToday.revenueToday * 28;
+
+  const greetName = user?.name?.split(' ')[0] ?? 'Алексей';
+  const greetSubtitle = isReception
+    ? 'Заезды, выезды и состояние номеров на смене'
+    : (isManagerial ? 'Финансовая сводка по объектам за сегодня' : 'Сводка за сегодня');
   return (
     <PageTransition>
       <PageHeader
-        title="Доброе утро, Алексей!"
-        subtitle="Вот сводка по вашим объектам за сегодня"
+        title={`Доброе утро, ${greetName}!`}
+        subtitle={greetSubtitle}
         action={
           <>
             <Button variant="outline" size="md">Сегодня</Button>
@@ -86,15 +121,33 @@ export default function DashboardPage() {
         }
       />
 
-      {/* KPI */}
-      <StaggerList className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <KpiCard icon={<Activity className="h-5 w-5" />} label="Загрузка" value={kpiToday.occupancy} format="percent" delta={4} tone="primary" />
-        <KpiCard icon={<Wallet className="h-5 w-5" />} label="Выручка сегодня" value={kpiToday.revenueToday} format="compact-money" delta={12} tone="success" />
-        <KpiCard icon={<BedDouble className="h-5 w-5" />} label="ADR" value={kpiToday.adr} format="money" delta={3} tone="gold" />
-        <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="RevPAR" value={kpiToday.revpar} format="money" delta={-2} tone="info" />
-        <KpiCard icon={<CalendarCheck className="h-5 w-5" />} label="Активные брони" value={kpiToday.activeBookings} format="number" delta={8} tone="primary" />
-        <KpiCard icon={<Users className="h-5 w-5" />} label="Гости сегодня" value={kpiToday.guestsToday} format="number" delta={5} tone="success" />
-      </StaggerList>
+      {/* KPI — зависит от роли */}
+      {isReception ? (
+        <StaggerList className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <KpiCard icon={<LogIn className="h-5 w-5" />} label="Заезды сегодня" value={checkInToday} format="number" delta={0} tone="primary" onClick={() => setDrillKey('checkin')} />
+          <KpiCard icon={<LogOut className="h-5 w-5" />} label="Выезды сегодня" value={checkOutToday} format="number" delta={0} tone="info" onClick={() => setDrillKey('checkout')} />
+          <KpiCard icon={<KeyRound className="h-5 w-5" />} label="Свободно номеров" value={freeRooms} format="number" delta={0} tone="success" onClick={() => setDrillKey('free')} />
+          <KpiCard icon={<Sparkle className="h-5 w-5" />} label="К уборке" value={pendingHousekeeping} format="number" delta={0} tone="gold" onClick={() => setDrillKey('tasks')} />
+        </StaggerList>
+      ) : isManagerial ? (
+        <StaggerList className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+          <KpiCard icon={<Wallet className="h-5 w-5" />} label="Выручка сегодня" value={kpiToday.revenueToday} format="compact-money" delta={12} tone="success" onClick={() => setDrillKey('revenue')} />
+          <KpiCard icon={<PiggyBank className="h-5 w-5" />} label="Маржа" value={margin} format="percent" delta={2} tone="gold" onClick={() => setDrillKey('margin')} />
+          <KpiCard icon={<Activity className="h-5 w-5" />} label="Загрузка" value={kpiToday.occupancy} format="percent" delta={4} tone="primary" onClick={() => setDrillKey('occupancy')} />
+          <KpiCard icon={<BedDouble className="h-5 w-5" />} label="ADR" value={kpiToday.adr} format="money" delta={3} tone="gold" onClick={() => setDrillKey('adr')} />
+          <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="RevPAR" value={kpiToday.revpar} format="money" delta={-2} tone="info" onClick={() => setDrillKey('revpar')} />
+          <KpiCard icon={<Percent className="h-5 w-5" />} label="Выручка / мес." value={monthRevenue} format="compact-money" delta={9} tone="success" />
+        </StaggerList>
+      ) : (
+        <StaggerList className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+          <KpiCard icon={<Activity className="h-5 w-5" />} label="Загрузка" value={kpiToday.occupancy} format="percent" delta={4} tone="primary" />
+          <KpiCard icon={<Wallet className="h-5 w-5" />} label="Выручка сегодня" value={kpiToday.revenueToday} format="compact-money" delta={12} tone="success" />
+          <KpiCard icon={<BedDouble className="h-5 w-5" />} label="ADR" value={kpiToday.adr} format="money" delta={3} tone="gold" />
+          <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="RevPAR" value={kpiToday.revpar} format="money" delta={-2} tone="info" />
+          <KpiCard icon={<CalendarCheck className="h-5 w-5" />} label="Активные брони" value={kpiToday.activeBookings} format="number" delta={8} tone="primary" />
+          <KpiCard icon={<Users className="h-5 w-5" />} label="Гости сегодня" value={kpiToday.guestsToday} format="number" delta={5} tone="success" />
+        </StaggerList>
+      )}
 
       {/* Графики */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
@@ -229,6 +282,53 @@ export default function DashboardPage() {
           </div>
         </Card>
       </div>
+
+      {/* Drill-down модалка: разбивка KPI по дням и каналам */}
+      <Modal
+        open={drillKey !== null}
+        onClose={() => setDrillKey(null)}
+        title={
+          drillKey === 'revenue' ? 'Выручка — разбивка'
+          : drillKey === 'occupancy' ? 'Загрузка — разбивка'
+          : drillKey === 'adr' ? 'ADR — разбивка'
+          : drillKey === 'revpar' ? 'RevPAR — разбивка'
+          : drillKey === 'margin' ? 'Маржа — разбивка'
+          : drillKey === 'checkin' ? 'Заезды сегодня'
+          : drillKey === 'checkout' ? 'Выезды сегодня'
+          : drillKey === 'free' ? 'Свободные номера'
+          : drillKey === 'tasks' ? 'Номера к уборке'
+          : 'Подробнее'
+        }
+        subtitle="Динамика за 14 дней и распределение по каналам"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={bookingTrend.slice(-14)}>
+                <CartesianGrid stroke="rgb(var(--border))" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="label" stroke="rgb(var(--text-muted))" fontSize={11} />
+                <YAxis stroke="rgb(var(--text-muted))" fontSize={11} />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="bookings" name="Значение" fill="rgb(var(--accent-primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {channelDistribution.map((c) => (
+              <div key={c.name} className="flex items-center gap-2 p-2 rounded-btn bg-surface-2">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
+                <span className="text-xs text-text flex-1">{c.name}</span>
+                <span className="text-xs font-bold text-text">{c.value}%</span>
+                {drillKey === 'revenue' && (
+                  <span className="text-[10px] text-text-muted">{fmtMoney(kpiToday.revenueToday * c.value / 100)}</span>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-[11px] text-text-muted">Данные демонстрационные — в проде будет реальный rollup по бронированиям.</p>
+        </div>
+      </Modal>
     </PageTransition>
   );
 }

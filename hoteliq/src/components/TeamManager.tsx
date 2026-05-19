@@ -1,7 +1,7 @@
 // Менеджер команды/сотрудников. Используется и на странице «Команда», и во вкладке «Сотрудники» в Настройках.
 // Идентичный UI в обоих местах: одна и та же база данных и логика.
-import { useState } from 'react';
-import { Plus, Trash2, ShieldCheck, UserPlus, KeyRound, Mail, Power } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Trash2, ShieldCheck, UserPlus, KeyRound, Mail, Power, Pencil, Upload } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
@@ -15,7 +15,7 @@ import {
 } from '@/store/auth';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/utils/format';
-import type { PermissionKey, UserRole } from '@/types';
+import type { PermissionKey, UserRole, User } from '@/types';
 
 export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
   const current = useCurrentUser();
@@ -27,6 +27,7 @@ export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
   const { push } = useToast();
 
   const [open, setOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<User | null>(null);
 
   // Подчинённые = вся команда кроме самого директора
   const subordinates = team.filter((u) => u.id !== current?.id);
@@ -49,7 +50,7 @@ export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
       {current && (
         <Card padding="md" className="mb-4 border-primary/30 bg-gradient-to-br from-primary/5 to-gold/5">
           <div className="flex items-center gap-4">
-            <Avatar name={current.name} size="lg" />
+            <Avatar name={current.name} src={current.avatar} size="lg" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <p className="font-display text-lg text-text">{current.name}</p>
@@ -75,7 +76,7 @@ export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
           {subordinates.map((u) => (
             <Card key={u.id} padding="md">
               <div className="flex items-start gap-4 flex-wrap">
-                <Avatar name={u.name} size="md" />
+                <Avatar name={u.name} src={u.avatar} size="md" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-bold text-text">{u.name}</p>
@@ -83,10 +84,17 @@ export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
                     <Badge tone="primary">{ROLE_LABEL[u.role]}</Badge>
                   </div>
                   <p className="text-xs text-text-muted mt-0.5 flex items-center gap-1.5">
-                    <Mail className="h-3 w-3" /> {u.email}
+                    <Mail className="h-3 w-3" /> {u.email}{u.phone ? ` · ${u.phone}` : ''}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost" size="sm"
+                    leftIcon={<Pencil className="h-3.5 w-3.5" />}
+                    onClick={() => setEditTarget(u)}
+                  >
+                    Редактировать
+                  </Button>
                   <Button
                     variant="ghost" size="sm"
                     leftIcon={<Power className="h-3.5 w-3.5" />}
@@ -154,6 +162,17 @@ export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
           addMember(data);
           push({ tone: 'success', title: 'Сотрудник добавлен', description: data.name });
           setOpen(false);
+        }}
+      />
+
+      <EditMemberModal
+        user={editTarget}
+        onClose={() => setEditTarget(null)}
+        onSave={(patch) => {
+          if (!editTarget) return;
+          updateMember(editTarget.id, patch);
+          push({ tone: 'success', title: 'Сохранено' });
+          setEditTarget(null);
         }}
       />
     </div>
@@ -245,6 +264,97 @@ function AddMemberModal({
               </label>
             ))}
           </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ===================== Модал редактирования =====================
+function EditMemberModal({ user, onClose, onSave }: {
+  user: User | null;
+  onClose: () => void;
+  onSave: (patch: Partial<User>) => void;
+}) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [role, setRole] = useState<UserRole>('reception');
+  const [avatar, setAvatar] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name);
+      setEmail(user.email);
+      setPhone(user.phone ?? '');
+      setRole(user.role);
+      setAvatar(user.avatar);
+    }
+  }, [user?.id]);
+
+  if (!user) return null;
+
+  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) { alert('Файл больше 2 МБ'); return; }
+    const r = new FileReader();
+    r.onload = () => setAvatar(String(r.result));
+    r.readAsDataURL(f);
+  };
+
+  const reset = () => { setName(''); setEmail(''); setPhone(''); setAvatar(undefined); };
+
+  return (
+    <Modal
+      open={!!user}
+      onClose={() => { onClose(); reset(); }}
+      title="Редактирование сотрудника"
+      subtitle={user.email}
+      size="md"
+      footer={
+        <>
+          <Button variant="ghost" onClick={() => { onClose(); reset(); }}>Отмена</Button>
+          <Button
+            disabled={!name.trim() || !email.trim()}
+            onClick={() => {
+              onSave({ name: name.trim(), email: email.trim(), phone: phone.trim() || undefined, role, avatar });
+              reset();
+            }}
+          >
+            Сохранить
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Avatar name={name || user.name} src={avatar} size="lg" />
+          <div className="flex-1">
+            <p className="text-xs uppercase font-bold text-text-muted mb-1">Аватар</p>
+            <label className="inline-flex items-center gap-2 px-3 h-9 rounded-btn border border-border cursor-pointer hover:bg-surface-2 text-sm font-semibold">
+              <Upload className="h-4 w-4" />
+              Загрузить
+              <input type="file" accept="image/*" className="hidden" onChange={onFile} />
+            </label>
+            {avatar && (
+              <Button size="sm" variant="ghost" className="ml-2" onClick={() => setAvatar(undefined)}>Убрать</Button>
+            )}
+            <p className="text-[11px] text-text-muted mt-1">PNG/JPG до 2 МБ</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Имя и фамилия" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Телефон" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 (___) ___-__-__" />
+          <Select
+            label="Роль"
+            value={role}
+            onChange={(e) => setRole(e.target.value as UserRole)}
+            options={(Object.keys(ROLE_LABEL) as UserRole[]).filter((r) => r !== 'admin').map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+          />
         </div>
       </div>
     </Modal>

@@ -1,10 +1,10 @@
 // Календарь броней: timeline номера × дни + drag&drop (с persist)
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   DndContext, useDraggable, useDroppable, type DragEndEvent, PointerSensor, useSensor, useSensors,
 } from '@dnd-kit/core';
-import { ChevronLeft, ChevronRight, Plus, FileText, Upload, BadgeCheck, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, FileText, Upload, BadgeCheck, CalendarDays, Undo2, Check, X, Coffee, Ban, Sparkles, Mail, Download } from 'lucide-react';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -13,7 +13,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, Textarea } from '@/components/ui/Input';
 import { rooms, properties } from '@/mock/data';
 import { useBookings } from '@/store/bookings';
-import type { Booking, BookingStatus, Guest, PassportData, Channel, BookingPayment } from '@/types';
+import type { Booking, BookingStatus, Guest, PassportData, Channel, BookingPayment, BookingTariff } from '@/types';
 import { fmtMoney, fmtDateShort, daysBetween, cn } from '@/utils/format';
 import { fmtDateLong, MONTHS_NOM, MONTHS_GENITIVE } from '@/utils/i18n';
 import { ROOM_CATEGORY_LABEL, BOOKING_STATUS_LABEL, CHANNEL_LABEL } from '@/utils/i18n';
@@ -35,6 +35,17 @@ const STATUS_STYLE: Record<BookingStatus, { bg: string; label: string }> = {
 // Ширина ячейки по режиму (День = 1 день крупно, Неделя = 7 дней, Месяц = весь месяц)
 const ZOOM_CELL: Record<Zoom, number> = { day: 220, week: 110, month: 42 };
 
+// Сколько дней рендерим в режиме (с запасом для горизонтального скролла)
+const ZOOM_DAYS: Record<Zoom, number> = { day: 30, week: 63, month: 120 };
+
+// Цветовая легенда тарифов (Завтрак / Без завтрака / Невозвратный / Всё включено)
+const TARIFF_META: Record<BookingTariff, { color: string; label: string; icon: typeof Coffee }> = {
+  breakfast:        { color: '#10b981', label: 'Завтрак',        icon: Coffee },
+  'no-breakfast':   { color: '#64748b', label: 'Без завтрака',   icon: Ban },
+  'non-refundable': { color: '#ef4444', label: 'Невозвратный',   icon: Sparkles },
+  'all-inclusive':  { color: '#a855f7', label: 'Всё включено',   icon: BadgeCheck },
+};
+
 // Обнулить время
 function atMidnight(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 // ISO YYYY-MM-DD локальной даты (без сдвига UTC)
@@ -44,7 +55,8 @@ function toIso(d: Date) {
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
-// Кол-во дней в месяце с учётом високосных
+// Кол-во дней в месяце с учётом високосных (зарезервировано)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function daysInMonth(year: number, monthIdx: number) {
   return new Date(year, monthIdx + 1, 0).getDate();
 }
@@ -71,13 +83,14 @@ function GridCell({
 
 // ---------- Бронь (draggable) ----------
 function BookingBlock({
-  booking, startIdx, length, cellW, onClick, zoom,
-}: { booking: Booking; startIdx: number; length: number; cellW: number; onClick: () => void; zoom: Zoom; }) {
+  booking, startIdx, length, cellW, onClick, zoom, selected,
+}: { booking: Booking; startIdx: number; length: number; cellW: number; onClick: (e: React.MouseEvent) => void; zoom: Zoom; selected?: boolean; }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `book:${booking.id}`,
     data: { booking },
   });
   const style = STATUS_STYLE[booking.status];
+  const tariff = booking.tariff ? TARIFF_META[booking.tariff] : null;
   const left = startIdx * cellW;
   const width = length * cellW - 4;
   return (
@@ -85,7 +98,7 @@ function BookingBlock({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onClick={(e) => { e.stopPropagation(); onClick(e); }}
       style={{
         position: 'absolute',
         left: left + 2,
@@ -95,14 +108,22 @@ function BookingBlock({
         transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0) scale(${isDragging ? 1.02 : 1})` : undefined,
         opacity: isDragging ? 0.8 : 1,
         zIndex: isDragging ? 50 : 1,
+        boxShadow: selected ? '0 0 0 2px #f5c451, 0 4px 12px rgba(0,0,0,0.25)' : undefined,
       }}
       className={cn(
-        'rounded-btn px-2 flex items-center text-xs font-semibold shadow-soft cursor-grab active:cursor-grabbing transition-shadow',
+        'rounded-btn pl-2.5 pr-2 flex items-center text-xs font-semibold shadow-soft cursor-grab active:cursor-grabbing transition-shadow overflow-hidden relative',
         style.bg,
       )}
-      title={`${booking.guestName}\n${booking.checkIn} → ${booking.checkOut}\n${fmtMoney(booking.amount)}`}
+      title={`${booking.guestName}\n${booking.checkIn} → ${booking.checkOut}\n${fmtMoney(booking.amount)}${tariff ? `\nТариф: ${tariff.label}` : ''}`}
     >
-      <span className="truncate">
+      {tariff && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-0 bottom-0 w-1.5"
+          style={{ background: tariff.color }}
+        />
+      )}
+      <span className={cn('truncate', tariff && 'ml-1')}>
         {zoom === 'month' ? booking.guestName.split(' ')[0] : booking.guestName}
       </span>
     </div>
@@ -128,6 +149,11 @@ export default function GridPage() {
 
   const [selected, setSelected] = useState<Booking | null>(null);
   const [createCtx, setCreateCtx] = useState<{ roomId: string; date: string } | null>(null);
+  // Множественное выделение броней (Shift+клик)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null);
+  // Undo стек последних перемещений drag&drop (Ctrl+Z)
+  const undoStackRef = useRef<{ id: string; prev: Pick<Booking, 'roomId' | 'checkIn' | 'checkOut'> }[]>([]);
   const { push } = useToast();
 
   // Реакция на ?new=1 в URL — открыть форму "Новая бронь" с дефолтным номером и сегодняшней датой
@@ -147,27 +173,26 @@ export default function GridPage() {
 
   const cellW = ZOOM_CELL[zoom];
 
-  // Вычисляем видимый диапазон исходя из режима и фокусной даты
+  // Вычисляем видимый диапазон исходя из режима и фокусной даты.
+  // Окно даём с запасом (см. ZOOM_DAYS) — пользователь скроллит горизонтально вперёд.
   const { startDate, daysCount, viewLabel } = useMemo(() => {
+    const total = ZOOM_DAYS[zoom];
     if (zoom === 'day') {
-      // Режим «День» — ровно один день крупно
       const s = atMidnight(focusDate);
-      return { startDate: s, daysCount: 1, viewLabel: fmtDateLong(s) };
+      return { startDate: s, daysCount: total, viewLabel: fmtDateLong(s) };
     }
     if (zoom === 'week') {
-      // Режим «Неделя» — понедельник-воскресенье, содержащая focusDate
       const s = atMidnight(focusDate);
       const dow = s.getDay() === 0 ? 6 : s.getDay() - 1; // 0 = Пн
       s.setDate(s.getDate() - dow);
-      const end = new Date(s); end.setDate(end.getDate() + 6);
-      return { startDate: s, daysCount: 7, viewLabel: `${s.getDate()}–${end.getDate()} ${MONTHS_GENITIVE[end.getMonth()]} ${end.getFullYear()}` };
+      const weekEnd = new Date(s); weekEnd.setDate(weekEnd.getDate() + 6);
+      return { startDate: s, daysCount: total, viewLabel: `${s.getDate()}–${weekEnd.getDate()} ${MONTHS_GENITIVE[weekEnd.getMonth()]} ${weekEnd.getFullYear()}` };
     }
-    // Режим «Месяц» — весь месяц focusDate (реальное кол-во дней, високосные учтены)
+    // Месяц
     const y = focusDate.getFullYear();
     const m = focusDate.getMonth();
     const s = new Date(y, m, 1);
-    const dim = daysInMonth(y, m);
-    return { startDate: s, daysCount: dim, viewLabel: `${MONTHS_NOM[m]} ${y}` };
+    return { startDate: s, daysCount: total, viewLabel: `${MONTHS_NOM[m]} ${y}` };
   }, [zoom, focusDate]);
 
   // Список дат в видимом окне
@@ -209,7 +234,7 @@ export default function GridPage() {
     return map;
   }, [visibleBookings]);
 
-  // Drag end: смещение брони на дни/комнату (с persist)
+  // Drag end: смещение брони на дни/комнату (с persist) + undo стек
   const handleDragEnd = (e: DragEndEvent) => {
     if (!e.over) return;
     const bookId = String(e.active.id).replace('book:', '');
@@ -218,6 +243,12 @@ export default function GridPage() {
     const [, newRoomId, newDate] = overId.split(':');
     const b = bookingList.find((x) => x.id === bookId);
     if (!b) return;
+    if (b.roomId === newRoomId && b.checkIn === newDate) return; // без изменений
+    undoStackRef.current.push({
+      id: bookId,
+      prev: { roomId: b.roomId, checkIn: b.checkIn, checkOut: b.checkOut },
+    });
+    if (undoStackRef.current.length > 30) undoStackRef.current.shift();
     const duration = daysBetween(b.checkIn, b.checkOut);
     const newOut = new Date(newDate); newOut.setDate(newOut.getDate() + duration);
     updateBooking(bookId, {
@@ -225,7 +256,134 @@ export default function GridPage() {
       checkIn: newDate,
       checkOut: toIso(newOut),
     });
-    push({ tone: 'success', title: 'Бронь перемещена', description: `Новая дата: ${fmtDateShort(newDate)}` });
+    push({ tone: 'success', title: 'Бронь перемещена', description: `Новая дата: ${fmtDateShort(newDate)} · Ctrl+Z — отменить` });
+  };
+
+  // Ctrl+Z — откатить последнее перемещение
+  const undoLastMove = useCallback(() => {
+    const last = undoStackRef.current.pop();
+    if (!last) {
+      push({ tone: 'info', title: 'Нечего отменять' });
+      return;
+    }
+    updateBooking(last.id, last.prev);
+    push({ tone: 'success', title: 'Перемещение отменено' });
+  }, [updateBooking, push]);
+
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent) => {
+      const tgt = ev.target as HTMLElement | null;
+      // не перехватываем Z в полях ввода
+      if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+      if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'z' || ev.key === 'Z' || ev.key === 'я' || ev.key === 'Я')) {
+        ev.preventDefault();
+        undoLastMove();
+      } else if (ev.key === 'Escape') {
+        setSelectedIds(new Set());
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undoLastMove]);
+
+  // LMB drag-to-scroll по сетке (без зажатия пробела/Ctrl)
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let isDown = false;
+    let startX = 0; let startY = 0; let scrollLeft = 0; let scrollTop = 0;
+    const onDown = (ev: PointerEvent) => {
+      // Перетаскивание сетки только по «пустой» области (не по броням и не по интерактиву)
+      const target = ev.target as HTMLElement;
+      if (target.closest('[data-no-pan="true"]')) return;
+      // dnd-kit pointer activation distance = 6, поэтому короткие клики его не активируют
+      isDown = true;
+      startX = ev.pageX;
+      startY = ev.pageY;
+      scrollLeft = el.scrollLeft;
+      scrollTop = el.scrollTop;
+      el.style.cursor = 'grabbing';
+    };
+    const onMove = (ev: PointerEvent) => {
+      if (!isDown) return;
+      el.scrollLeft = scrollLeft - (ev.pageX - startX);
+      el.scrollTop = scrollTop - (ev.pageY - startY);
+    };
+    const onUp = () => { isDown = false; el.style.cursor = ''; };
+    el.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      el.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+  }, []);
+
+  // Клик по брони с учётом Shift — мульти-выбор
+  const handleBookingClick = (b: Booking, ev: React.MouseEvent) => {
+    if (ev.shiftKey) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        // Если есть «якорный» элемент — выделяем диапазон между ними в visibleBookings
+        if (lastSelectedId && next.size > 0) {
+          const ids = visibleBookings.map((x) => x.id);
+          const a = ids.indexOf(lastSelectedId);
+          const c = ids.indexOf(b.id);
+          if (a >= 0 && c >= 0) {
+            const [lo, hi] = a < c ? [a, c] : [c, a];
+            for (let i = lo; i <= hi; i++) next.add(ids[i]);
+            return next;
+          }
+        }
+        if (next.has(b.id)) next.delete(b.id); else next.add(b.id);
+        return next;
+      });
+      setLastSelectedId(b.id);
+      return;
+    }
+    if (ev.ctrlKey || ev.metaKey) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(b.id)) next.delete(b.id); else next.add(b.id);
+        return next;
+      });
+      setLastSelectedId(b.id);
+      return;
+    }
+    if (selectedIds.size > 0) {
+      // если есть выделение — обычный клик закрывает выделение и открывает деталь
+      setSelectedIds(new Set());
+    }
+    setSelected(b);
+  };
+
+  // Действия над выделенными
+  const bulkChangeStatus = (st: BookingStatus) => {
+    selectedIds.forEach((id) => updateBooking(id, { status: st }));
+    push({ tone: 'success', title: `Статус обновлён (${selectedIds.size})`, description: BOOKING_STATUS_LABEL[st] });
+    setSelectedIds(new Set());
+  };
+  const bulkCancel = () => {
+    selectedIds.forEach((id) => cancelBooking(id));
+    push({ tone: 'warning', title: `Отменено: ${selectedIds.size}` });
+    setSelectedIds(new Set());
+  };
+  const bulkExportCsv = () => {
+    const rows = visibleBookings.filter((b) => selectedIds.has(b.id));
+    const header = 'id;guest;room;checkIn;checkOut;status;channel;amount';
+    const csv = [header, ...rows.map((b) => [b.id, b.guestName, b.roomId, b.checkIn, b.checkOut, b.status, b.channel, b.amount].join(';'))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `bookings_${toIso(new Date())}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    push({ tone: 'success', title: `Экспортировано: ${rows.length}` });
+  };
+  const bulkSendEmail = () => {
+    push({ tone: 'success', title: `Подтверждение отправлено: ${selectedIds.size}`, description: 'Шаблон «Подтверждение брони»' });
+    setSelectedIds(new Set());
   };
 
   // Навигация: стрелки сдвигают на 1 день/неделю/месяц в зависимости от режима
@@ -286,6 +444,18 @@ export default function GridPage() {
               </span>
             ))}
           </div>
+          {/* Легенда тарифов */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2 rounded-btn bg-surface border border-border h-10">
+            {(Object.keys(TARIFF_META) as BookingTariff[]).map((k) => {
+              const m = TARIFF_META[k];
+              return (
+                <span key={k} className="flex items-center gap-1.5 text-[11px]">
+                  <span className="h-2.5 w-1 rounded-sm" style={{ background: m.color }} />
+                  <span className="text-text-muted whitespace-nowrap">{m.label}</span>
+                </span>
+              );
+            })}
+          </div>
           <Button size="md" leftIcon={<Plus className="h-4 w-4" />} onClick={() => {
             const r = rooms[0];
             if (r) setCreateCtx({ roomId: r.id, date: toIso(new Date()) });
@@ -313,7 +483,7 @@ export default function GridPage() {
                 {(['day', 'week', 'month'] as Zoom[]).map((z) => (
                   <button
                     key={z}
-                    onClick={() => setZoom(z)}
+                    onClick={() => { setZoom(z); setFocusDate(atMidnight(new Date())); }}
                     className={cn(
                       'px-3 h-7 rounded-md text-xs font-semibold transition-colors',
                       zoom === z ? 'bg-bg text-text shadow-soft' : 'text-text-muted hover:text-text',
@@ -338,8 +508,30 @@ export default function GridPage() {
             </div>
           </div>
 
+          {/* Панель массовых действий */}
+          {selectedIds.size > 0 && (
+            <div data-no-pan="true" className="px-3 py-2 border-b border-border flex items-center gap-2 flex-wrap bg-primary/5">
+              <span className="text-xs font-bold text-text">Выбрано: {selectedIds.size}</span>
+              <span className="text-[11px] text-text-muted">Shift+клик — диапазон · Ctrl+клик — точечно · Esc — снять</span>
+              <span className="mx-2 h-4 w-px bg-border" />
+              <Button size="sm" variant="ghost" leftIcon={<Check className="h-3.5 w-3.5" />} onClick={() => bulkChangeStatus('confirmed')}>Подтвердить</Button>
+              <Button size="sm" variant="ghost" leftIcon={<Check className="h-3.5 w-3.5" />} onClick={() => bulkChangeStatus('checkin')}>Заезд</Button>
+              <Button size="sm" variant="ghost" leftIcon={<Check className="h-3.5 w-3.5" />} onClick={() => bulkChangeStatus('checkout')}>Выезд</Button>
+              <Button size="sm" variant="ghost" leftIcon={<Mail className="h-3.5 w-3.5" />} onClick={bulkSendEmail}>Email</Button>
+              <Button size="sm" variant="ghost" leftIcon={<Download className="h-3.5 w-3.5" />} onClick={bulkExportCsv}>CSV</Button>
+              <Button size="sm" variant="ghost" leftIcon={<X className="h-3.5 w-3.5" />} onClick={bulkCancel}>Отменить</Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>Снять выделение</Button>
+            </div>
+          )}
+
+          {/* Подсказки + Undo */}
+          <div data-no-pan="true" className="px-3 py-1.5 border-b border-border flex items-center justify-between text-[11px] text-text-muted">
+            <span>Перетаскивайте сетку ЛКМ · бронь — Shift+клик для выбора нескольких · Ctrl+Z — отменить перемещение</span>
+            <Button size="sm" variant="ghost" leftIcon={<Undo2 className="h-3.5 w-3.5" />} onClick={undoLastMove}>Отменить</Button>
+          </div>
+
           {/* Сетка */}
-          <div className="overflow-auto max-h-[calc(100vh-230px)]">
+          <div ref={scrollRef} className="overflow-auto max-h-[calc(100vh-230px)] select-none" style={{ cursor: 'grab' }}>
             <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
               <div className="flex">
                 {/* Левая колонка — номера */}
@@ -413,7 +605,8 @@ export default function GridPage() {
                               startIdx={visibleStart}
                               length={visibleEnd - visibleStart}
                               cellW={cellW}
-                              onClick={() => setSelected(b)}
+                              selected={selectedIds.has(b.id)}
+                              onClick={(e) => handleBookingClick(b, e)}
                             />
                           );
                         }
@@ -422,7 +615,8 @@ export default function GridPage() {
                           <BookingBlock
                             key={b.id} booking={b} zoom={zoom}
                             startIdx={startIdx} length={length} cellW={cellW}
-                            onClick={() => setSelected(b)}
+                            selected={selectedIds.has(b.id)}
+                            onClick={(e) => handleBookingClick(b, e)}
                           />
                         );
                       })}
@@ -704,6 +898,14 @@ function CreateBookingModal({ ctx, onClose, onCreate }: {
   const [sendEmailConfirmation, setSendEmailConfirmation] = useState(true);
   const [showPayModal, setShowPayModal] = useState<null | 'add' | 'refund'>(null);
 
+  const ctxRoomId = ctx?.roomId;
+  // Цена за сутки авто из тарифа, пока пользователь не тронул
+  useEffect(() => {
+    if (!ctxRoomId) return;
+    const r = rooms.find((x) => x.id === ctxRoomId);
+    if (r && !pricePerNightTouched) setPricePerNight(r.basePrice);
+  }, [ctxRoomId, pricePerNightTouched]);
+
   // OCR-мок: автозаполнение паспорта при загрузке скана
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -738,11 +940,6 @@ function CreateBookingModal({ ctx, onClose, onCreate }: {
   if (!ctx) return null;
   const room = rooms.find((r) => r.id === ctx.roomId);
   const prop = properties.find((p) => p.id === room?.propertyId);
-
-  // Цена за сутки авто из тарифа, пока пользователь не тронул
-  useEffect(() => {
-    if (room && !pricePerNightTouched) setPricePerNight(room.basePrice);
-  }, [room?.id, pricePerNightTouched]);
 
   const totalRooms = (pricePerNight || 0) * nights;
   const paid = payments.reduce((acc, p) => acc + (p.refund ? -p.amount : p.amount), 0);

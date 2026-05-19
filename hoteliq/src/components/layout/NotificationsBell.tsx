@@ -1,11 +1,13 @@
 // Поповер уведомлений-колокольчик в шапке.
 import { useEffect, useRef, useState } from 'react';
-import { Bell, Check, Trash2, ShieldCheck, BellOff, ExternalLink } from 'lucide-react';
+import { Bell, Check, Trash2, ShieldCheck, BellOff, ExternalLink, ListTree, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications, NOTIF_CATEGORY_LABEL, type NotifTone } from '@/store/notifications';
+import type { NotificationItem } from '@/store/notifications';
 import { useSettings } from '@/store/settings';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Modal } from '@/components/ui/Modal';
 import { cn, fmtDateLong } from '@/utils/format';
 
 const TONE_STYLE: Record<NotifTone, string> = {
@@ -24,6 +26,9 @@ const TONE_DOT: Record<NotifTone, string> = {
 
 export function NotificationsBell() {
   const [open, setOpen] = useState(false);
+  const [allOpen, setAllOpen] = useState(false);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 20;
   const ref = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
   const { items, markAllRead, markRead, remove, clear, permission, requestBrowserPermission } = useNotifications();
@@ -149,16 +154,134 @@ export function NotificationsBell() {
             ))}
           </div>
 
-          <div className="border-t border-border px-4 py-2 flex items-center justify-between bg-surface-2/40">
+          <div className="border-t border-border px-4 py-2 flex items-center justify-between bg-surface-2/40 gap-2">
             <button onClick={clear} className="text-[11px] text-text-muted hover:text-error inline-flex items-center gap-1">
               <Trash2 className="h-3 w-3" /> Очистить
             </button>
+            <button
+              onClick={() => { setOpen(false); setPage(0); setAllOpen(true); }}
+              className="text-[11px] text-primary hover:underline inline-flex items-center gap-1 font-bold"
+            >
+              <ListTree className="h-3 w-3" /> Все уведомления
+            </button>
             <button onClick={() => { setOpen(false); navigate('/settings?tab=notif'); }} className="text-[11px] text-primary hover:underline">
-              Настройки уведомлений →
+              Настройки →
             </button>
           </div>
         </div>
       )}
+
+      <AllNotificationsModal
+        open={allOpen}
+        onClose={() => setAllOpen(false)}
+        items={items}
+        page={page}
+        setPage={setPage}
+        pageSize={PAGE_SIZE}
+        onMarkRead={markRead}
+        onRemove={remove}
+        onMarkAllRead={markAllRead}
+        onClear={clear}
+        onNavigate={(link) => { setAllOpen(false); navigate(link); }}
+      />
     </div>
+  );
+}
+
+// =====================================================================
+// Модалка «Все уведомления» — по центру экрана,
+// со скроллом, пагинацией и кнопками удаления / прочитано.
+// =====================================================================
+function AllNotificationsModal({
+  open, onClose, items, page, setPage, pageSize,
+  onMarkRead, onRemove, onMarkAllRead, onClear, onNavigate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  items: NotificationItem[];
+  page: number;
+  setPage: (p: number) => void;
+  pageSize: number;
+  onMarkRead: (id: string) => void;
+  onRemove: (id: string) => void;
+  onMarkAllRead: () => void;
+  onClear: () => void;
+  onNavigate: (link: string) => void;
+}) {
+  const total = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safePage = Math.min(page, totalPages - 1);
+  const start = safePage * pageSize;
+  const visible = items.slice(start, start + pageSize);
+  const unread = items.filter((i) => !i.read).length;
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Все уведомления"
+      subtitle={`${unread} непрочитанных · всего ${total}`}
+      size="lg"
+      footer={
+        <div className="flex items-center justify-between w-full gap-2">
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" onClick={onMarkAllRead} disabled={unread === 0}>Прочитать всё</Button>
+            <Button size="sm" variant="ghost" leftIcon={<Trash2 className="h-3 w-3" />} onClick={onClear} disabled={total === 0}>Очистить</Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" leftIcon={<ChevronLeft className="h-3 w-3" />} disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>
+              Назад
+            </Button>
+            <span className="text-xs text-text-muted font-mono">{safePage + 1} / {totalPages}</span>
+            <Button size="sm" variant="ghost" rightIcon={<ChevronRight className="h-3 w-3" />} disabled={safePage >= totalPages - 1} onClick={() => setPage(safePage + 1)}>
+              Далее
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <div className="max-h-[60vh] overflow-y-auto -mx-2 px-2 space-y-1">
+        {visible.length === 0 && (
+          <div className="py-16 text-center text-sm text-text-muted">Нет уведомлений.</div>
+        )}
+        {visible.map((n) => (
+          <div
+            key={n.id}
+            className={cn(
+              'group p-3 rounded-card border border-border bg-surface flex items-start gap-3 hover:bg-surface-2/60 transition',
+              n.read && 'opacity-60',
+            )}
+          >
+            <span className={cn('mt-2 h-2 w-2 rounded-full shrink-0', TONE_DOT[n.tone])} />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-bold text-sm text-text">{n.title}</p>
+                <Badge tone="neutral" className="!text-[10px]">{NOTIF_CATEGORY_LABEL[n.category]}</Badge>
+                {!n.read && <Badge tone="primary" className="!text-[10px]">новое</Badge>}
+              </div>
+              {n.body && <p className="text-xs text-text-muted leading-snug mt-1">{n.body}</p>}
+              <p className="text-[10px] text-text-muted mt-1">{fmtDateLong(n.createdAt)}</p>
+            </div>
+            <div className="flex items-center gap-1">
+              {n.link && (
+                <Button size="sm" variant="ghost" onClick={() => { onMarkRead(n.id); onNavigate(n.link!); }}>
+                  Открыть
+                </Button>
+              )}
+              {!n.read && (
+                <button onClick={() => onMarkRead(n.id)} title="Прочитано"
+                  className="h-8 w-8 rounded-btn hover:bg-surface-2 flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-text-muted" />
+                </button>
+              )}
+              <button onClick={() => onRemove(n.id)} title="Удалить"
+                className="h-8 w-8 rounded-btn hover:bg-error/10 flex items-center justify-center">
+                <Trash2 className="h-3.5 w-3.5 text-error" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Modal>
   );
 }

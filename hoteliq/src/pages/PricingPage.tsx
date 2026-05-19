@@ -3,11 +3,11 @@
 import { useMemo, useState } from 'react';
 import {
   Calendar as CalIcon, Zap, Target, Sliders, Info,
-  Plus, Trash2, Pencil, Lightbulb,
+  Plus, Trash2, Pencil, Lightbulb, Brain, MapPin,
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Legend,
+  BarChart, Bar, Legend, Area, ComposedChart, ReferenceLine,
 } from 'recharts';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -18,6 +18,7 @@ import { Select } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
 import { usePricing } from '@/store/pricing';
 import { properties } from '@/mock/data';
+import { cityEvents, CITY_EVENT_CATEGORY_LABEL, CITY_EVENT_CATEGORY_COLOR } from '@/mock/cityEvents';
 import { fmtMoney, cn } from '@/utils/format';
 import { useToast } from '@/components/ui/Toast';
 import { PricingRuleModal, RULE_CONDITION_LABEL } from '@/components/pricing/PricingRuleModal';
@@ -328,6 +329,139 @@ export default function PricingPage() {
           }
         }}
       />
+
+      <MLForecastSection propertyForecast={propertyForecast} />
     </PageTransition>
+  );
+}
+
+// =====================================================================
+// ML-прогноз спроса + календарь городских событий Владикавказа
+// =====================================================================
+function MLForecastSection({
+  propertyForecast,
+}: {
+  propertyForecast: Array<{ date: string; currentPrice: number; recommendedPrice: number; forecastOccupancy: number; }>;
+}) {
+  // Простая ML-модель: EMA по recommendedPrice + boost от ближайшего события + дов. интервал ±15%
+  const eventByDate = useMemo(() => {
+    const m = new Map<string, typeof cityEvents[0]>();
+    cityEvents.forEach((e) => m.set(e.date, e));
+    return m;
+  }, []);
+
+  const mlData = useMemo(() => {
+    if (propertyForecast.length === 0) return [];
+    const alpha = 0.35; // коэффициент сглаживания EMA
+    let ema = propertyForecast[0].recommendedPrice;
+    return propertyForecast.map((f) => {
+      ema = alpha * f.recommendedPrice + (1 - alpha) * ema;
+      const ev = eventByDate.get(f.date);
+      const eventBoost = ev ? ev.impactPct / 100 : 0;
+      const mlPrice = Math.round(ema * (1 + eventBoost));
+      const lower = Math.round(mlPrice * 0.85);
+      const upper = Math.round(mlPrice * 1.15);
+      const mlOccupancy = Math.min(99, Math.round(f.forecastOccupancy * (1 + eventBoost * 0.6)));
+      return {
+        date: f.date.slice(5),
+        current: f.currentPrice,
+        ml: mlPrice,
+        lower,
+        upper,
+        confBand: upper - lower,
+        occupancy: mlOccupancy,
+        event: ev?.name,
+      };
+    });
+  }, [propertyForecast, eventByDate]);
+
+  const upcomingEvents = useMemo(() => {
+    const horizonEnd = propertyForecast[propertyForecast.length - 1]?.date;
+    if (!horizonEnd) return cityEvents.slice(0, 6);
+    return cityEvents.filter((e) => e.date <= horizonEnd).slice(0, 8);
+  }, [propertyForecast]);
+
+  return (
+    <>
+      <Card padding="md" className="mt-6">
+        <CardHeader
+          title={<span className="flex items-center gap-2"><Brain className="h-5 w-5 text-primary" /> ML-прогноз цены и спроса</span>}
+          subtitle="Сглаживание EMA + boost от городских событий, доверительный коридор ±15%"
+          action={<Badge tone="primary" dot>модель v0.3</Badge>}
+        />
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={mlData}>
+              <CartesianGrid stroke="rgb(var(--border))" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="date" stroke="rgb(var(--text-muted))" fontSize={11} />
+              <YAxis stroke="rgb(var(--text-muted))" fontSize={11} />
+              <Tooltip
+                contentStyle={{
+                  background: 'rgb(var(--bg))',
+                  border: '1px solid rgb(var(--border))',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                formatter={(value: any, name: string) => {
+                  if (name === 'Доверительный коридор') return null;
+                  return [typeof value === 'number' ? fmtMoney(value) : value, name];
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Area type="monotone" dataKey="lower" stackId="ci" stroke="none" fill="transparent" name="нижняя граница" />
+              <Area type="monotone" dataKey="confBand" stackId="ci" stroke="none" fill="rgb(var(--accent-primary))" fillOpacity={0.12} name="Доверительный коридор" />
+              <Line type="monotone" dataKey="current" name="Текущая цена" stroke="rgb(var(--text-muted))" strokeDasharray="4 3" dot={false} />
+              <Line type="monotone" dataKey="ml" name="ML-прогноз" stroke="rgb(var(--accent-primary))" strokeWidth={2.5} dot={{ r: 3 }} />
+              {upcomingEvents.map((e) => (
+                <ReferenceLine
+                  key={e.id}
+                  x={e.date.slice(5)}
+                  stroke={CITY_EVENT_CATEGORY_COLOR[e.category]}
+                  strokeDasharray="2 2"
+                />
+              ))}
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-3 text-xs">
+          <div className="p-2 rounded-btn bg-surface-2">
+            <p className="text-text-muted">Средний ML-прогноз</p>
+            <p className="font-bold text-text">{fmtMoney(Math.round(mlData.reduce((s, d) => s + d.ml, 0) / Math.max(1, mlData.length)))}</p>
+          </div>
+          <div className="p-2 rounded-btn bg-surface-2">
+            <p className="text-text-muted">Пик прогноза</p>
+            <p className="font-bold text-success">{fmtMoney(Math.max(...mlData.map((d) => d.ml), 0))}</p>
+          </div>
+          <div className="p-2 rounded-btn bg-surface-2">
+            <p className="text-text-muted">Событий в окне</p>
+            <p className="font-bold text-primary">{upcomingEvents.length}</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card padding="md" className="mt-4">
+        <CardHeader
+          title={<span className="flex items-center gap-2"><MapPin className="h-5 w-5 text-warning" /> Календарь событий Владикавказа</span>}
+          subtitle="Учитываются ML-моделью при прогнозе цен"
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {upcomingEvents.map((e) => (
+            <div key={e.id} className="flex items-center gap-3 p-3 rounded-btn border border-border hover:bg-surface-2 transition">
+              <div
+                className="h-10 w-10 rounded-btn flex items-center justify-center text-white font-bold text-sm shrink-0"
+                style={{ background: CITY_EVENT_CATEGORY_COLOR[e.category] }}
+              >
+                {new Date(e.date).getDate()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-text truncate">{e.name}</p>
+                <p className="text-[11px] text-text-muted">{e.venue} · {CITY_EVENT_CATEGORY_LABEL[e.category]}{e.attendance ? ` · ~${e.attendance.toLocaleString('ru-RU')} чел.` : ''}</p>
+              </div>
+              <Badge tone="warning">+{e.impactPct}%</Badge>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </>
   );
 }
