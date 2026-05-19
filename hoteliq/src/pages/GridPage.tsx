@@ -286,38 +286,47 @@ export default function GridPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [undoLastMove]);
 
-  // LMB drag-to-scroll по сетке (без зажатия пробела/Ctrl)
+  // ПКМ drag-to-scroll по сетке. ЛКМ оставлена для броней (dnd-kit) и кликов.
   const scrollRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     let isDown = false;
+    let moved = false;
     let startX = 0; let startY = 0; let scrollLeft = 0; let scrollTop = 0;
-    const onDown = (ev: PointerEvent) => {
-      // Перетаскивание сетки только по «пустой» области (не по броням и не по интерактиву)
-      const target = ev.target as HTMLElement;
-      if (target.closest('[data-no-pan="true"]')) return;
-      // dnd-kit pointer activation distance = 6, поэтому короткие клики его не активируют
+    const onDown = (ev: MouseEvent) => {
+      if (ev.button !== 2) return; // только правая кнопка
+      ev.preventDefault();
       isDown = true;
+      moved = false;
       startX = ev.pageX;
       startY = ev.pageY;
       scrollLeft = el.scrollLeft;
       scrollTop = el.scrollTop;
       el.style.cursor = 'grabbing';
     };
-    const onMove = (ev: PointerEvent) => {
+    const onMove = (ev: MouseEvent) => {
       if (!isDown) return;
-      el.scrollLeft = scrollLeft - (ev.pageX - startX);
-      el.scrollTop = scrollTop - (ev.pageY - startY);
+      const dx = ev.pageX - startX;
+      const dy = ev.pageY - startY;
+      if (!moved && Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+      el.scrollLeft = scrollLeft - dx;
+      el.scrollTop = scrollTop - dy;
     };
     const onUp = () => { isDown = false; el.style.cursor = ''; };
-    el.addEventListener('pointerdown', onDown);
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
+    const onContextMenu = (ev: MouseEvent) => {
+      // если пользователь именно тащил — подавляем контекстное меню
+      if (moved) { ev.preventDefault(); moved = false; }
+    };
+    el.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    el.addEventListener('contextmenu', onContextMenu);
     return () => {
-      el.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+      el.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      el.removeEventListener('contextmenu', onContextMenu);
     };
   }, []);
 
