@@ -50,13 +50,24 @@ interface AuthState {
   login: (email: string, password: string, name?: string) => User;
   register: (data: { name: string; email: string; password: string }) => User;
   logout: () => void;
-  addMember: (data: { name: string; email: string; role: UserRole; permissions?: PermissionKey[] }) => User;
+  addMember: (data: { name: string; email: string; role: UserRole; permissions?: PermissionKey[]; password?: string }) => User;
   updateMember: (id: string, patch: Partial<User>) => void;
   removeMember: (id: string) => void;
   togglePermission: (id: string, perm: PermissionKey) => void;
+  // Сбрасывает пароль сотрудника, возвращает новый пароль (показать админу один раз)
+  resetPassword: (id: string) => string;
 }
 
 const newId = () => `u_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+
+// Генератор временного пароля. 10 символов из алфавита без похожих символов (0/O, 1/l/I).
+// Для мок-режима этого достаточно; в проде пароль сохранялся бы хешем на бэке.
+export function generatePassword(len = 10): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  let out = '';
+  for (let i = 0; i < len; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return out;
+}
 
 export const useAuth = create<AuthState>()(
   persist(
@@ -67,6 +78,10 @@ export const useAuth = create<AuthState>()(
       login: (email, password, name) => {
         const existing = get().team.find((u) => u.email.toLowerCase() === email.toLowerCase());
         if (existing) {
+          // Если у пользователя выставлен пароль — валидируем его.
+          if (existing.password && existing.password !== password) {
+            throw new Error('Неверный пароль');
+          }
           // Бэкфилл: у директора ownerId должен указывать на самого себя,
           // чтобы фильтрация команды по владельцу работала для старых аккаунтов.
           if (existing.role === 'admin' && !existing.ownerId) {
@@ -115,7 +130,7 @@ export const useAuth = create<AuthState>()(
 
       logout: () => set({ currentUserId: null }),
 
-      addMember: ({ name, email, role, permissions }) => {
+      addMember: ({ name, email, role, permissions, password }) => {
         const owner = get().currentUserId;
         const member: User = {
           id: newId(),
@@ -124,6 +139,8 @@ export const useAuth = create<AuthState>()(
           role,
           active: true,
           ownerId: owner ?? undefined,
+          // Если админ не указал пароль — генерируем временный, чтобы сотрудник мог войти.
+          password: password && password.trim() ? password.trim() : generatePassword(),
           permissions: permissions ?? [...DEFAULT_ROLE_PERMISSIONS[role]],
           createdAt: new Date().toISOString(),
         };
@@ -149,6 +166,14 @@ export const useAuth = create<AuthState>()(
           };
         }),
       })),
+
+      resetPassword: (id) => {
+        const newPwd = generatePassword();
+        set((s) => ({
+          team: s.team.map((u) => (u.id === id ? { ...u, password: newPwd } : u)),
+        }));
+        return newPwd;
+      },
     }),
     { name: 'ginohotel-auth' },
   ),

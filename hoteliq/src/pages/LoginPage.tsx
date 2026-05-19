@@ -38,11 +38,17 @@ export default function LoginPage() {
     setLoading(true);
     // Имитация запроса
     setTimeout(() => {
-      const user = mode === 'login'
-        ? login(email.trim(), password, name.trim() || undefined)
-        : register({ name: name.trim(), email: email.trim(), password });
-      push({ tone: 'success', title: `Добро пожаловать, ${user.name}!` });
-      setLoading(false);
+      try {
+        const user = mode === 'login'
+          ? login(email.trim(), password, name.trim() || undefined)
+          : register({ name: name.trim(), email: email.trim(), password });
+        push({ tone: 'success', title: `Добро пожаловать, ${user.name}!` });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Ошибка входа';
+        push({ tone: 'error', title: 'Не удалось войти', description: msg });
+      } finally {
+        setLoading(false);
+      }
     }, 350);
   };
 

@@ -1,7 +1,7 @@
 // Менеджер команды/сотрудников. Используется и на странице «Команда», и во вкладке «Сотрудники» в Настройках.
 // Идентичный UI в обоих местах: одна и та же база данных и логика.
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, ShieldCheck, UserPlus, KeyRound, Mail, Power, Pencil, Upload } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, UserPlus, KeyRound, Mail, Power, Pencil, Upload, Copy, RefreshCw, Eye, EyeOff, Check } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
@@ -11,7 +11,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import {
   useAuth, useCurrentUser, useOwnedTeam, PERMISSION_LABEL, ROLE_LABEL,
-  DEFAULT_ROLE_PERMISSIONS, ALL_PERMISSIONS,
+  DEFAULT_ROLE_PERMISSIONS, ALL_PERMISSIONS, generatePassword,
 } from '@/store/auth';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/utils/format';
@@ -24,10 +24,13 @@ export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
   const removeMember = useAuth((s) => s.removeMember);
   const togglePermission = useAuth((s) => s.togglePermission);
   const updateMember = useAuth((s) => s.updateMember);
+  const resetPassword = useAuth((s) => s.resetPassword);
   const { push } = useToast();
 
   const [open, setOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<User | null>(null);
+  // Модалка с выданными учётными данными (показываем один раз после добавления / сброса)
+  const [credentials, setCredentials] = useState<{ name: string; email: string; password: string; mode: 'created' | 'reset' } | null>(null);
 
   // Подчинённые = вся команда кроме самого директора
   const subordinates = team.filter((u) => u.id !== current?.id);
@@ -97,6 +100,17 @@ export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
                   </Button>
                   <Button
                     variant="ghost" size="sm"
+                    leftIcon={<KeyRound className="h-3.5 w-3.5" />}
+                    onClick={() => {
+                      if (!confirm(`Сбросить пароль для ${u.name}? Старый пароль перестанет работать.`)) return;
+                      const newPwd = resetPassword(u.id);
+                      setCredentials({ name: u.name, email: u.email, password: newPwd, mode: 'reset' });
+                    }}
+                  >
+                    Сбросить пароль
+                  </Button>
+                  <Button
+                    variant="ghost" size="sm"
                     leftIcon={<Power className="h-3.5 w-3.5" />}
                     onClick={() => {
                       updateMember(u.id, { active: !u.active });
@@ -159,10 +173,19 @@ export function TeamManager({ showHeading = true }: { showHeading?: boolean }) {
         open={open}
         onClose={() => setOpen(false)}
         onAdd={(data) => {
-          addMember(data);
+          const created = addMember(data);
           push({ tone: 'success', title: 'Сотрудник добавлен', description: data.name });
           setOpen(false);
+          // Показываем выданный пароль один раз (в persist он всё равно лежит в явном виде, так как это мок)
+          if (created.password) {
+            setCredentials({ name: created.name, email: created.email, password: created.password, mode: 'created' });
+          }
         }}
+      />
+
+      <CredentialsModal
+        data={credentials}
+        onClose={() => setCredentials(null)}
       />
 
       <EditMemberModal
@@ -185,12 +208,14 @@ function AddMemberModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onAdd: (data: { name: string; email: string; role: UserRole; permissions: PermissionKey[] }) => void;
+  onAdd: (data: { name: string; email: string; role: UserRole; permissions: PermissionKey[]; password: string }) => void;
 }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<UserRole>('reception');
   const [perms, setPerms] = useState<PermissionKey[]>([...DEFAULT_ROLE_PERMISSIONS.reception]);
+  const [password, setPassword] = useState(() => generatePassword());
+  const [showPwd, setShowPwd] = useState(false);
 
   const handleRole = (r: UserRole) => {
     setRole(r);
@@ -204,6 +229,8 @@ function AddMemberModal({
   const reset = () => {
     setName(''); setEmail(''); setRole('reception');
     setPerms([...DEFAULT_ROLE_PERMISSIONS.reception]);
+    setPassword(generatePassword());
+    setShowPwd(false);
   };
 
   return (
@@ -217,9 +244,9 @@ function AddMemberModal({
         <>
           <Button variant="ghost" onClick={() => { onClose(); reset(); }}>Отмена</Button>
           <Button
-            disabled={!name.trim() || !email.trim()}
+            disabled={!name.trim() || !email.trim() || !password.trim()}
             onClick={() => {
-              onAdd({ name: name.trim(), email: email.trim(), role, permissions: perms });
+              onAdd({ name: name.trim(), email: email.trim(), role, permissions: perms, password: password.trim() });
               reset();
             }}
           >
@@ -232,6 +259,27 @@ function AddMemberModal({
         <div className="grid grid-cols-2 gap-3">
           <Input label="Имя и фамилия" placeholder="Мария Кузнецова" value={name} onChange={(e) => setName(e.target.value)} />
           <Input label="Email" placeholder="m.kuznetsova@hotel.ru" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        {/* Временный пароль: автогенерация + показать/скрыть + перегенерировать. Покажется один раз после добавления */}
+        <div>
+          <label className="block text-xs font-bold uppercase text-text-muted mb-1">Временный пароль</label>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 relative">
+              <Input
+                type={showPwd ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Автосгенерирован"
+              />
+            </div>
+            <button type="button" className="h-10 px-3 rounded-btn border border-border text-text-muted hover:text-text hover:bg-surface-2 transition-colors" onClick={() => setShowPwd((v) => !v)} title={showPwd ? 'Скрыть' : 'Показать'}>
+              {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+            <button type="button" className="h-10 px-3 rounded-btn border border-border text-text-muted hover:text-text hover:bg-surface-2 transition-colors" onClick={() => setPassword(generatePassword())} title="Сгенерировать другой">
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
+          <p className="text-[11px] text-text-muted mt-1">Передайте этот пароль сотруднику. После добавления вы увидите его выделенным блоком — можно скопировать.</p>
         </div>
         <Select
           label="Роль"
@@ -358,5 +406,84 @@ function EditMemberModal({ user, onClose, onSave }: {
         </div>
       </div>
     </Modal>
+  );
+}
+
+// ===================== Модал с учётными данными =====================
+// Показывается один раз после добавления сотрудника или сброса пароля.
+// Админ должен скопировать пароль и передать его сотруднику.
+function CredentialsModal({
+  data, onClose,
+}: {
+  data: { name: string; email: string; password: string; mode: 'created' | 'reset' } | null;
+  onClose: () => void;
+}) {
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const { push } = useToast();
+
+  const copy = async (label: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(label);
+      setTimeout(() => setCopiedKey(null), 1500);
+    } catch {
+      push({ tone: 'error', title: 'Не удалось скопировать' });
+    }
+  };
+
+  if (!data) return null;
+  return (
+    <Modal
+      open={!!data}
+      onClose={onClose}
+      title={data.mode === 'created' ? 'Учётные данные сотрудника' : 'Пароль сброшен'}
+      subtitle={data.mode === 'created'
+        ? `Передайте логин и пароль ${data.name} безопасным способом`
+        : `Новый пароль для ${data.name} — старый перестал работать`}
+      size="sm"
+      footer={
+        <Button
+          onClick={() => copy('all', `Email: ${data.email}\nПароль: ${data.password}`)}
+          leftIcon={copiedKey === 'all' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        >
+          {copiedKey === 'all' ? 'Скопировано' : 'Скопировать всё'}
+        </Button>
+      }
+    >
+      <div className="space-y-3">
+        <CredentialRow label="Email" value={data.email} copied={copiedKey === 'email'} onCopy={() => copy('email', data.email)} mono={false} />
+        <CredentialRow label="Пароль" value={data.password} copied={copiedKey === 'password'} onCopy={() => copy('password', data.password)} mono />
+        <div className="p-3 rounded-btn bg-warning/10 border border-warning/30 text-xs text-text">
+          <p className="font-bold mb-1 flex items-center gap-1.5">
+            <KeyRound className="h-3.5 w-3.5" /> Важно
+          </p>
+          <p className="text-text-muted leading-snug">
+            Этот пароль показывается только сейчас. Скопируйте и передайте сотруднику. Если потеряете — сбросьте через кнопку «Сбросить пароль» в карточке.
+          </p>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function CredentialRow({ label, value, copied, onCopy, mono }: {
+  label: string; value: string; copied: boolean; onCopy: () => void; mono: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase font-bold text-text-muted mb-1">{label}</p>
+      <div className="flex items-center gap-2 p-2.5 rounded-btn bg-surface-2 border border-border">
+        <span className={cn('flex-1 text-sm text-text break-all', mono && 'font-mono tracking-wide')}>{value}</span>
+        <button
+          type="button"
+          onClick={onCopy}
+          className={cn('h-8 w-8 rounded-md flex items-center justify-center transition-colors',
+            copied ? 'bg-success/15 text-success' : 'text-text-muted hover:bg-surface hover:text-text')}
+          title="Скопировать"
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        </button>
+      </div>
+    </div>
   );
 }
