@@ -132,7 +132,7 @@ export const useRoomService = create<RoomServiceState>()(
         set((s) => ({ enabledByProperty: { ...s.enabledByProperty, [propertyId]: restaurantIds } })),
     }),
     {
-      name: 'ginohotel-roomservice',
+      name: 'horizon-roomservice',
       onRehydrateStorage: () => (state) => { if (state) state.hydrated = true; },
     }
   )

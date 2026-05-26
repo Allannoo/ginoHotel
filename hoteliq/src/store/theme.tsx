@@ -18,7 +18,7 @@ export const useThemeStore = create<ThemeStore>()(
       toggle: () => set({ theme: get().theme === 'light' ? 'dark' : 'light' }),
       set: (t) => set({ theme: t }),
     }),
-    { name: 'ginohotel-theme' },
+    { name: 'horizon-theme' },
   ),
 );
 

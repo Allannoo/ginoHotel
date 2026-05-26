@@ -19,7 +19,7 @@ const DOC_META: Record<DocKind, { title: string; subtitle: string; icon: React.R
   },
   terms: {
     title: 'Условия использования',
-    subtitle: `Договор-оферта между пользователем и GinoHotel · обновлено ${POLICY_UPDATED_AT}`,
+    subtitle: `Договор-оферта между пользователем и Горизонт · обновлено ${POLICY_UPDATED_AT}`,
     icon: <FileText className="h-5 w-5" />,
     sections: TERMS_OF_USE,
   },

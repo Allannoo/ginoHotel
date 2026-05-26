@@ -85,7 +85,7 @@ export default function FinancePage() {
 
       // ===== Лист 1: Сводка =====
       const summaryRows: (string | number)[][] = [
-        ['Финансовый отчёт GinoHotel'],
+        ['Финансовый отчёт Горизонт'],
         [],
         ['Объект', propName],
         ['Период', periodLabel],
@@ -181,7 +181,7 @@ export default function FinancePage() {
       XLSX.utils.book_append_sheet(wb, wsCh, 'По каналам');
 
       const safePeriod = periodLabel.replace(/[^\wа-яА-Я0-9-]+/g, '_');
-      const fname = `GinoHotel_${propertyId === 'all' ? 'все' : propertyId}_${safePeriod}.xlsx`;
+      const fname = `Horizon_${propertyId === 'all' ? 'все' : propertyId}_${safePeriod}.xlsx`;
       XLSX.writeFile(wb, fname);
       push({ tone: 'success', title: 'XLSX экспортирован', description: `${filtered.length} записей · 3 листа` });
     } else {

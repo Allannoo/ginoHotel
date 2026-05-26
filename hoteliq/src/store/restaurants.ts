@@ -46,7 +46,7 @@ export const useRestaurants = create<RestaurantsState>()(
       resetToMock: () => set({ restaurants: seed }),
     }),
     {
-      name: 'ginohotel-restaurants',
+      name: 'horizon-restaurants',
       onRehydrateStorage: () => (state) => { if (state) state.hydrated = true; },
     }
   )

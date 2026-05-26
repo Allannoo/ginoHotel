@@ -7,7 +7,7 @@ interface State { error: Error | null; }
 export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   state: State = { error: null };
   static getDerivedStateFromError(error: Error) { return { error }; }
-  componentDidCatch(error: Error) { console.error('[GinoHotel ErrorBoundary]', error); }
+  componentDidCatch(error: Error) { console.error('[Горизонт ErrorBoundary]', error); }
   reset = () => this.setState({ error: null });
   render() {
     if (!this.state.error) return this.props.children;

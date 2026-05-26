@@ -629,7 +629,7 @@ function WebhooksTab() {
   const toggle = useSettings((s) => s.toggleWebhook);
   const [event, setEvent] = useState('booking.created');
   const [url, setUrl] = useState('');
-  const token = 'sk_live_ginohotel_4f7a92bd6c1e8f9a';
+  const token = 'sk_live_horizon_4f7a92bd6c1e8f9a';
 
   return (
     <div className="space-y-4">
@@ -721,7 +721,7 @@ function TwoFactorSection() {
     push({ tone: 'success', title: '2FA отключена' });
   };
 
-  const otpauth = `otpauth://totp/GinoHotel:${user.email}?secret=${secret}&issuer=GinoHotel`;
+  const otpauth = `otpauth://totp/Horizon:${user.email}?secret=${secret}&issuer=Horizon`;
 
   if (enabled) {
     return (

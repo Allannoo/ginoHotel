@@ -69,11 +69,26 @@ export function generatePassword(len = 10): string {
   return out;
 }
 
+// ===== Демо-аккаунт =====
+// Сид-пользователь для презентации/партнёрского доступа. Всегда восстанавливается в persist через merge,
+// чтобы логин работал даже после очистки хранилища.
+export const DEMO_USER: User = {
+  id: 'u_demo',
+  name: 'Демо-директор',
+  email: 'demo@horizon-pms.ru',
+  role: 'admin',
+  active: true,
+  password: 'Demo2026!',
+  ownerId: 'u_demo',
+  permissions: [...ALL_PERMISSIONS],
+  createdAt: new Date(0).toISOString(),
+};
+
 export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
       currentUserId: null,
-      team: [],
+      team: [DEMO_USER],
 
       login: (email, password, name) => {
         const existing = get().team.find((u) => u.email.toLowerCase() === email.toLowerCase());
@@ -175,7 +190,21 @@ export const useAuth = create<AuthState>()(
         return newPwd;
       },
     }),
-    { name: 'ginohotel-auth' },
+    {
+      name: 'horizon-auth',
+      version: 2,
+      // При регидратации всегда гарантируем наличие демо-аккаунта
+      merge: (persisted, current) => {
+        const p = (persisted as Partial<AuthState>) ?? {};
+        const team = p.team ?? [];
+        const hasDemo = team.some((u) => u.email.toLowerCase() === DEMO_USER.email);
+        return {
+          ...current,
+          ...p,
+          team: hasDemo ? team : [DEMO_USER, ...team],
+        } as AuthState;
+      },
+    },
   ),
 );
 

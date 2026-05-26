@@ -124,7 +124,7 @@ function seed(): { reports: SavedReport[]; scheduled: ScheduledReport[] } {
       {
         id: 'sch_demo_1',
         reportId: r1.id,
-        recipients: ['director@ginohotel.ru'],
+        recipients: ['director@horizon-pms.ru'],
         frequency: 'weekly',
         enabled: true,
         nextRunAt: new Date(Date.now() + 86400_000).toISOString(),
@@ -151,6 +151,6 @@ export const useReports = create<State>()(
       removeSchedule: (id) => set((s) => ({ scheduled: s.scheduled.filter((x) => x.id !== id) })),
       runNow: (id) => set((s) => ({ scheduled: s.scheduled.map((x) => x.id === id ? { ...x, lastRunAt: new Date().toISOString() } : x) })),
     }),
-    { name: 'ginohotel-reports' },
+    { name: 'horizon-reports' },
   ),
 );

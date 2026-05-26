@@ -1,4 +1,4 @@
-# GinoHotel — План реализации
+# Горизонт — План реализации
 
 > Платформа управления отелями и посуточной недвижимостью.
 > Стек: **React 18 + TypeScript + Vite + Tailwind CSS + Framer Motion + Recharts + React Router v6 + React Query + Zustand + @dnd-kit**.
@@ -61,7 +61,7 @@
 
 ## Шаг 3: Layout
 - [x] `Sidebar` (240px фиксированный, collapsible до 72px icon-only)
-  - Логотип GinoHotel
+  - Логотип Горизонт
   - Навигация (Дашборд, Шахматка, Объекты, Каналы, Гости, Финансы, Задачи, Настройки)
   - Внизу: переключатель темы, AI-статус, профиль
 - [x] `Header` (64px, sticky)

@@ -52,7 +52,7 @@ export const useExpenses = create<ExpensesState>()(
       resetToMock: () => set({ expenses: seedExpenses }),
     }),
     {
-      name: 'ginohotel-expenses',
+      name: 'horizon-expenses',
       onRehydrateStorage: () => (state) => { if (state) state.hydrated = true; },
     }
   )

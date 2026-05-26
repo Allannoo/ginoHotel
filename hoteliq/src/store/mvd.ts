@@ -42,7 +42,7 @@ export const useMvd = create<MvdState>()(
       removeReport: (id) => set((s) => ({ reports: s.reports.filter((x) => x.id !== id) })),
     }),
     {
-      name: 'ginohotel-mvd',
+      name: 'horizon-mvd',
       onRehydrateStorage: () => (state) => { if (state) state.hydrated = true; },
     }
   )

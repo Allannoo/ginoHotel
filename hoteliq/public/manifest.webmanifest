@@ -1,6 +1,6 @@
 {
-  "name": "GinoHotel",
-  "short_name": "GinoHotel",
+  "name": "Горизонт",
+  "short_name": "Горизонт",
   "description": "Платформа управления отелями и посуточной недвижимостью",
   "start_url": "/",
   "display": "standalone",

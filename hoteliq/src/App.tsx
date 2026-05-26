@@ -59,7 +59,7 @@ function PageLoader() {
   );
 }
 
-// Премиальный полноэкранный лоадер с пульсирующим логотипом "G"
+// Премиальный полноэкранный лоадер с пульсирующим логотипом «Г»
 function FullPageLoader() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-bg via-surface to-bg gap-6">
@@ -74,7 +74,7 @@ function FullPageLoader() {
           className="absolute -inset-3 rounded-2xl bg-gradient-to-tr from-primary via-gold to-primary opacity-30 blur-xl"
         />
         <div className="relative h-20 w-20 rounded-2xl bg-gradient-to-br from-primary to-[#08111f] flex items-center justify-center shadow-2xl">
-          <span className="font-display text-5xl text-gold leading-none">G</span>
+          <span className="font-display text-5xl text-gold leading-none">Г</span>
         </div>
       </motion.div>
       <div className="flex items-center gap-1.5">
@@ -87,7 +87,7 @@ function FullPageLoader() {
           />
         ))}
       </div>
-      <p className="text-xs uppercase tracking-[0.3em] text-text-muted font-bold">GinoHotel</p>
+      <p className="text-xs uppercase tracking-[0.3em] text-text-muted font-bold">Горизонт</p>
     </div>
   );
 }

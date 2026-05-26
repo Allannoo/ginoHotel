@@ -175,7 +175,7 @@ export const useNotifications = create<NotifState>()(
       setPermission: (p) => set({ permission: p }),
     }),
     {
-      name: 'ginohotel-notifications',
+      name: 'horizon-notifications',
       partialize: (s) => ({ items: s.items.slice(0, 100) }),
       onRehydrateStorage: () => (state) => { if (state) state.hydrated = true; },
     }

@@ -133,7 +133,7 @@ export const usePricing = create<PricingState>()(
       },
     }),
     {
-      name: 'ginohotel-pricing',
+      name: 'horizon-pricing',
       onRehydrateStorage: () => (state) => { if (state) state.hydrated = true; },
     }
   )

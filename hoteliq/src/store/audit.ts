@@ -90,6 +90,6 @@ export const useAuditLog = create<AuditState>()(
       })),
       clear: () => set({ entries: [] }),
     }),
-    { name: 'ginohotel-audit' },
+    { name: 'horizon-audit' },
   ),
 );

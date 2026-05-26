@@ -59,6 +59,6 @@ export const useFieldRoles = create<FieldRolesState>()(
       canSee: (field, role) => get().matrix[field]?.includes(role) ?? false,
       reset: () => set({ matrix: DEFAULT_MATRIX }),
     }),
-    { name: 'ginohotel-field-roles' },
+    { name: 'horizon-field-roles' },
   ),
 );

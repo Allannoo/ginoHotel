@@ -265,7 +265,7 @@ function ScheduleModal({ report, onClose, onSchedule }: {
   onClose: () => void;
   onSchedule: (s: { reportId: string; recipients: string[]; frequency: Frequency; enabled: boolean }) => void;
 }) {
-  const [recipients, setRecipients] = useState('director@ginohotel.ru');
+  const [recipients, setRecipients] = useState('director@horizon-pms.ru');
   const [frequency, setFrequency] = useState<Frequency>('weekly');
 
   return (
@@ -301,7 +301,7 @@ function ScheduleModal({ report, onClose, onSchedule }: {
           rows={2}
           value={recipients}
           onChange={(e) => setRecipients(e.target.value)}
-          placeholder="director@ginohotel.ru, owner@hotel.ru"
+          placeholder="director@horizon-pms.ru, owner@hotel.ru"
         />
         <Select
           label="Частота"

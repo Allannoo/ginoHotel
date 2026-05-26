@@ -70,10 +70,10 @@ export default function LoginPage() {
         >
           {/* Лого на мобилке */}
           <div className="flex lg:hidden items-center gap-3 mb-8">
-            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-gold flex items-center justify-center text-white font-display text-xl shadow-soft">G</div>
+            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-gold flex items-center justify-center text-white font-display text-xl shadow-soft">Г</div>
             <div>
-              <p className="font-display text-xl text-text leading-none">GinoHotel</p>
-              <p className="text-[11px] text-text-muted mt-0.5">Система управления отелем</p>
+              <p className="font-display text-xl text-text leading-none">Горизонт</p>
+              <p className="text-[11px] text-text-muted mt-0.5">Система управления отелями</p>
             </div>
           </div>
 
@@ -285,10 +285,10 @@ function BrandingPane() {
       <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 text-white w-full">
         {/* Лого */}
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center font-display text-2xl shadow-soft">G</div>
+          <div className="h-12 w-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center font-display text-2xl shadow-soft">Г</div>
           <div>
-            <p className="font-display text-2xl leading-none">GinoHotel</p>
-            <p className="text-[11px] text-white/60 mt-1 tracking-wider uppercase">Премиум-система управления · 2026</p>
+            <p className="font-display text-2xl leading-none">Горизонт</p>
+            <p className="text-[11px] text-white/60 mt-1 tracking-wider uppercase">Система управления отелями</p>
           </div>
         </div>
 
@@ -328,8 +328,6 @@ function BrandingPane() {
             <ShieldCheck className="h-4 w-4 text-success" />
             <span>Соответствие 152-ФЗ · Шифрование TLS</span>
           </div>
-          <span className="h-1 w-1 rounded-full bg-white/30" />
-          <span>Уже с нами 1 200+ объектов</span>
         </div>
       </div>
     </div>

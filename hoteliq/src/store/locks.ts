@@ -77,7 +77,7 @@ export const useLocks = create<LocksState>()(
         set((s) => ({ keys: s.keys.map((x) => (x.id === id ? { ...x, status: 'used' as const, usedAt: new Date().toISOString() } : x)) })),
     }),
     {
-      name: 'ginohotel-locks',
+      name: 'horizon-locks',
       onRehydrateStorage: () => (state) => { if (state) state.hydrated = true; },
     }
   )

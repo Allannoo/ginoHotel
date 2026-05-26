@@ -51,7 +51,7 @@ function defaults(): Record<LockProvider, LockProviderConfig> {
     apiKey: '',
     apiSecret: '',
     accountEmail: '',
-    webhookUrl: 'https://ginohotel.ru/api/webhooks/locks',
+    webhookUrl: 'https://horizon-pms.ru/api/webhooks/locks',
     status: 'disconnected',
   });
   return {
@@ -91,6 +91,6 @@ export const useLockIntegrations = create<State>()(
         }));
       },
     }),
-    { name: 'ginohotel-lock-integrations' },
+    { name: 'horizon-lock-integrations' },
   ),
 );

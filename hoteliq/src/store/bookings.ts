@@ -55,7 +55,7 @@ export const useBookings = create<BookingsState>()(
       resetToMock: () => set({ bookings: seedBookings, guests: seedGuests }),
     }),
     {
-      name: 'ginohotel-bookings',
+      name: 'horizon-bookings',
       // Версия 2: моковые брони перегенерированы без наложений по номеру.
       // Старый localStorage-кэш игнорируется и заменяется свежим seed-набором.
       version: 2,

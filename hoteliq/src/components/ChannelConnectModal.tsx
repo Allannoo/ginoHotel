@@ -328,14 +328,14 @@ function EmailWizard({ step, draft, setField }: Parameters<typeof WhatsAppWizard
   if (step === 2) return (
     <div className="space-y-3">
       <StepCallout>Введите логин и пароль почтового ящика, от имени которого будут отправляться письма гостям.</StepCallout>
-      <Input label="Логин (email)" type="email" placeholder="bot@ginohotel.ru" value={draft.smtpUser ?? ''} onChange={(e) => setField('smtpUser', e.target.value)} />
+      <Input label="Логин (email)" type="email" placeholder="bot@horizon-pms.ru" value={draft.smtpUser ?? ''} onChange={(e) => setField('smtpUser', e.target.value)} />
       <Input label="Пароль / App password" type="password" value={draft.smtpPass ?? ''} onChange={(e) => setField('smtpPass', e.target.value)} />
     </div>
   );
   return (
     <div className="space-y-3">
       <StepCallout>Имя отправителя — то, что гость видит в поле «От кого».</StepCallout>
-      <Input label="Имя отправителя" placeholder="GinoHotel · Бронирование" value={draft.fromName ?? ''} onChange={(e) => setField('fromName', e.target.value)} />
+      <Input label="Имя отправителя" placeholder="Горизонт · Бронирование" value={draft.fromName ?? ''} onChange={(e) => setField('fromName', e.target.value)} />
     </div>
   );
 }
@@ -366,7 +366,7 @@ function SmsWizard({ step, draft, setField }: Parameters<typeof WhatsAppWizard>[
   return (
     <div className="space-y-3">
       <StepCallout>Укажите имя отправителя — оно отображается у гостя вместо номера. Обычно нужно отдельно зарегистрировать у провайдера.</StepCallout>
-      <Input label="Имя отправителя (Alpha Name)" placeholder="GinoHotel" value={draft.fromName ?? ''} onChange={(e) => setField('fromName', e.target.value)} />
+      <Input label="Имя отправителя (Alpha Name)" placeholder="Horizon" value={draft.fromName ?? ''} onChange={(e) => setField('fromName', e.target.value)} />
       <Input label="Тестовый номер для проверки" placeholder="+7 999 123-45-67" value={draft.phoneNumber ?? ''} onChange={(e) => setField('phoneNumber', e.target.value)} />
     </div>
   );
