@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/store/auth';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/utils/format';
+import { LegalModal } from '@/components/LegalModal';
 
 type Mode = 'login' | 'register';
+type LegalKind = 'privacy' | 'terms';
 
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>('login');
@@ -20,6 +22,7 @@ export default function LoginPage() {
   const [name, setName] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [legal, setLegal] = useState<LegalKind | null>(null);
 
   const login = useAuth((s) => s.login);
   const register = useAuth((s) => s.register);
@@ -70,7 +73,7 @@ export default function LoginPage() {
             <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-gold flex items-center justify-center text-white font-display text-xl shadow-soft">G</div>
             <div>
               <p className="font-display text-xl text-text leading-none">GinoHotel</p>
-              <p className="text-[11px] text-text-muted mt-0.5">PMS Platform</p>
+              <p className="text-[11px] text-text-muted mt-0.5">Система управления отелем</p>
             </div>
           </div>
 
@@ -199,10 +202,26 @@ export default function LoginPage() {
           </form>
 
           <p className="text-[11px] text-text-muted/80 text-center mt-10 leading-relaxed">
-            Продолжая, вы принимаете <a className="underline">условия использования</a> и <a className="underline">политику конфиденциальности</a>.
+            Продолжая, вы принимаете{' '}
+            <button
+              type="button"
+              onClick={() => setLegal('terms')}
+              className="text-primary font-semibold underline underline-offset-2 hover:no-underline"
+            >
+              условия использования
+            </button>{' '}и{' '}
+            <button
+              type="button"
+              onClick={() => setLegal('privacy')}
+              className="text-primary font-semibold underline underline-offset-2 hover:no-underline"
+            >
+              политику конфиденциальности
+            </button>.
           </p>
         </motion.div>
       </div>
+
+      <LegalModal open={legal !== null} kind={legal} onClose={() => setLegal(null)} />
     </div>
   );
 }
@@ -269,7 +288,7 @@ function BrandingPane() {
           <div className="h-12 w-12 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center font-display text-2xl shadow-soft">G</div>
           <div>
             <p className="font-display text-2xl leading-none">GinoHotel</p>
-            <p className="text-[11px] text-white/60 mt-1 tracking-wider uppercase">Premium PMS · 2026</p>
+            <p className="text-[11px] text-white/60 mt-1 tracking-wider uppercase">Премиум-система управления · 2026</p>
           </div>
         </div>
 
@@ -277,7 +296,7 @@ function BrandingPane() {
         <div className="max-w-lg">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-sm text-xs font-semibold mb-6">
             <Sparkles className="h-3.5 w-3.5 text-gold" />
-            <span>AI-управление недвижимостью</span>
+            <span>Интеллектуальное управление недвижимостью</span>
           </div>
           <h1 className="font-display text-5xl xl:text-6xl leading-[1.05]">
             Управляйте отелями и квартирами как премиальная сеть.
@@ -291,9 +310,9 @@ function BrandingPane() {
           <div className="mt-10 grid grid-cols-2 gap-3 max-w-md">
             {[
               { icon: CalendarRange, text: 'Календарь броней' },
-              { icon: Radio, text: 'Channel Manager' },
+              { icon: Radio, text: 'Менеджер каналов' },
               { icon: BarChart3, text: 'Финансы и отчёты' },
-              { icon: Building2, text: 'Отели / квартиры' },
+              { icon: Building2, text: 'Отели и квартиры' },
             ].map((f) => (
               <div key={f.text} className="flex items-center gap-2.5 px-3 py-2.5 rounded-btn bg-white/5 border border-white/10 backdrop-blur-sm">
                 <f.icon className="h-4 w-4 text-gold shrink-0" />
@@ -307,7 +326,7 @@ function BrandingPane() {
         <div className="flex items-center gap-6 text-sm text-white/70">
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-success" />
-            <span>SOC 2 · 152-ФЗ</span>
+            <span>Соответствие 152-ФЗ · Шифрование TLS</span>
           </div>
           <span className="h-1 w-1 rounded-full bg-white/30" />
           <span>Уже с нами 1 200+ объектов</span>

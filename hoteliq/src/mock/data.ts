@@ -191,13 +191,15 @@ export const bookings: Booking[] = (() => {
 // ============================================================
 // Каналы продаж
 // ============================================================
+// Все каналы по умолчанию не подключены — реальные API подключаются вручную после
+// получения партнёрских ключей. Активные брони и наценка обнулены до подключения.
 export const channels: ChannelConnection[] = [
-  { id: 'ch_1', channel: 'ostrovok', name: 'Островок', icon: 'ostrovok', connected: true, hasError: false, lastSync: '2 минуты назад', activeBookings: 34, markup: 0 },
-  { id: 'ch_2', channel: 'yandex', name: 'Яндекс.Путешествия', icon: 'yandex', connected: true, hasError: false, lastSync: '5 минут назад', activeBookings: 22, markup: 5 },
-  { id: 'ch_3', channel: 'sutochno', name: 'Суточно.ру', icon: 'sutochno', connected: true, hasError: false, lastSync: '12 минут назад', activeBookings: 18, markup: 3 },
-  { id: 'ch_4', channel: 'otello', name: 'Отелло', icon: 'otello', connected: true, hasError: false, lastSync: '1 час назад', activeBookings: 9, markup: 0 },
-  { id: 'ch_5', channel: '101hotels', name: '101Hotels', icon: '101hotels', connected: false, hasError: true, lastSync: '6 часов назад', activeBookings: 0, markup: 0 },
-  { id: 'ch_6', channel: 'avito', name: 'Авито Недвижимость', icon: 'avito', connected: false, hasError: false, lastSync: 'никогда', activeBookings: 0, markup: 0 },
+  { id: 'ch_1', channel: 'ostrovok',  name: 'Островок',           icon: 'ostrovok',  connected: false, hasError: false, lastSync: 'никогда', activeBookings: 0, markup: 0 },
+  { id: 'ch_2', channel: 'yandex',    name: 'Яндекс Путешествия', icon: 'yandex',    connected: false, hasError: false, lastSync: 'никогда', activeBookings: 0, markup: 0 },
+  { id: 'ch_3', channel: 'sutochno',  name: 'Суточно.ру',         icon: 'sutochno',  connected: false, hasError: false, lastSync: 'никогда', activeBookings: 0, markup: 0 },
+  { id: 'ch_4', channel: 'otello',    name: 'Отелло',             icon: 'otello',    connected: false, hasError: false, lastSync: 'никогда', activeBookings: 0, markup: 0 },
+  { id: 'ch_5', channel: '101hotels', name: '101Hotels',          icon: '101hotels', connected: false, hasError: false, lastSync: 'никогда', activeBookings: 0, markup: 0 },
+  { id: 'ch_6', channel: 'avito',     name: 'Авито Недвижимость', icon: 'avito',     connected: false, hasError: false, lastSync: 'никогда', activeBookings: 0, markup: 0 },
 ];
 
 export const syncLog: SyncLogEntry[] = Array.from({ length: 18 }).map((_, i) => {
